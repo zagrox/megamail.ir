@@ -109,6 +109,7 @@ const resources = {
       saveAndContinue: 'Save and Continue',
       setupFailed: 'Automatic setup failed.',
       setupFailedManualPrompt: 'Please complete the setup manually. Your API key has been sent to your email.',
+      visitDemo: 'Stuck? Visit the demo version',
       // Dashboard
       welcomeMessage: 'Welcome back, {{name}}!',
       user: 'User',
@@ -764,6 +765,7 @@ const resources = {
       saveAndContinue: 'ذخیره و ادامه',
       setupFailed: 'راه‌اندازی خودکار ناموفق بود.',
       setupFailedManualPrompt: 'لطفاً راه‌اندازی را به صورت دستی تکمیل کنید. کلید API شما به ایمیلتان ارسال شده است.',
+      visitDemo: 'مشکلی پیش آمده؟ از نسخه دمو بازدید کنید',
       // Dashboard
       welcomeMessage: 'خوش آمدید، {{name}}!',
       user: 'کاربر',

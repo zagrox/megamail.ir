@@ -90,6 +90,7 @@ const OnboardingFlowView = ({ onComplete }: { onComplete: () => void }) => {
     
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [demoLoading, setDemoLoading] = useState(false);
 
     // Step 3 state
     const [profileData, setProfileData] = useState({
@@ -132,6 +133,21 @@ const OnboardingFlowView = ({ onComplete }: { onComplete: () => void }) => {
             addToast(err.message || t('invalidApiKey'), 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDemoLogin = async () => {
+        setDemoLoading(true);
+        const DEMO_API_KEY = 'CAA7DE853FEDA01F7D314E018B78FFD163F0C328F93352CAF663C2BDA732CBE91C7E0A6E218464A17EDD5A474668EBE5';
+        try {
+            await apiFetch('/account/load', DEMO_API_KEY); // Validate key
+            await updateUser({ elastickey: DEMO_API_KEY });
+            addToast('Welcome to the demo version!', 'success');
+            onComplete();
+        } catch (err: any) {
+            addToast(err.message || t('invalidApiKey'), 'error');
+        } finally {
+            setDemoLoading(false);
         }
     };
 
@@ -188,9 +204,12 @@ const OnboardingFlowView = ({ onComplete }: { onComplete: () => void }) => {
                                             <Icon path={showPassword ? ICONS.EYE_OFF : ICONS.EYE} />
                                         </button>
                                     </div>
-                                    <div className="form-actions" style={{ justifyContent: 'center', border: 'none', padding: '1rem 0 0' }}>
-                                        <button type="submit" className="btn btn-primary" disabled={loading}>
+                                    <div className="form-actions" style={{ justifyContent: 'center', border: 'none', padding: '1rem 0 0', flexDirection: 'column', gap: '1rem', maxWidth: '400px', margin: '0 auto' }}>
+                                        <button type="submit" className="btn btn-primary full-width" disabled={loading || demoLoading}>
                                             {loading ? <Loader /> : t('verifyAndFinish')}
+                                        </button>
+                                        <button type="button" className="btn btn-secondary full-width" onClick={handleDemoLogin} disabled={loading || demoLoading}>
+                                            {demoLoading ? <Loader /> : t('visitDemo')}
                                         </button>
                                     </div>
                                 </form>
@@ -199,7 +218,7 @@ const OnboardingFlowView = ({ onComplete }: { onComplete: () => void }) => {
                     )}
                 </div>
                 <div className="onboarding-actions">
-                    <button className="btn btn-secondary" onClick={handleBack} disabled={step === 1 || loading} style={{ visibility: step > 1 ? 'visible' : 'hidden' }}>
+                    <button className="btn btn-secondary" onClick={handleBack} disabled={step === 1 || loading || demoLoading} style={{ visibility: step > 1 ? 'visible' : 'hidden' }}>
                         {t('back')}
                     </button>
                     {step < 3 && <button className="btn btn-primary" onClick={handleNext}>{step === 1 ? t('getStarted') : t('nextStep')}</button>}
