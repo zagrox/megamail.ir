@@ -1,0 +1,18 @@
+{
+  "name": "Mailzila - Email Marketing Platform",
+  "short_name": "Mailzila",
+  "description": "Your complete email marketing solution, powered by Mailzila.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F9FC",
+  "theme_color": "#1A2B3C",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://mailzila.com/logo/app-logo-red.png",
+      "type": "image/png",
+      "purpose": "any maskable",
+      "sizes": "512x512"
+    }
+  ]
+}
