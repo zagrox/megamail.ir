@@ -204,8 +204,8 @@ const OnboardingFlowView = ({ onComplete }: { onComplete: () => void }) => {
                                             <Icon path={showPassword ? ICONS.EYE_OFF : ICONS.EYE} />
                                         </button>
                                     </div>
-                                    <div className="form-actions" style={{ justifyContent: 'center', border: 'none', padding: '1rem 0 0', flexDirection: 'column', gap: '1rem', maxWidth: '400px', margin: '0 auto' }}>
-                                        <button type="submit" className="btn btn-primary full-width" disabled={loading || demoLoading}>
+                                    <div className="form-actions" style={{ justifyContent: 'center', border: 'none', padding: '1rem 0 0', flexDirection: 'column', maxWidth: '400px', margin: '0 auto' }}>
+                                        <button type="submit" className="btn btn-primary full-width" disabled={loading || demoLoading} style={{ marginBottom: '0.75rem' }}>
                                             {loading ? <Loader /> : t('verifyAndFinish')}
                                         </button>
                                         <button type="button" className="btn btn-secondary full-width" onClick={handleDemoLogin} disabled={loading || demoLoading}>
