@@ -4,11 +4,13 @@ import Modal from '../../components/Modal';
 import { formatDateForDisplay } from '../../utils/helpers';
 import Badge from '../../components/Badge';
 import Icon, { ICONS } from '../../components/Icon';
+import { useOrderStatuses } from '../../hooks/useOrderStatuses';
 
 const OrderDetailsModal = ({ isOpen, onClose, order }: { isOpen: boolean, onClose: () => void, order: any }) => {
     const { t, i18n } = useTranslation();
+    const { statusesMap, loading: statusesLoading } = useOrderStatuses();
 
-    const getStatusBadge = (status: string) => {
+    const getStatusBadgeType = (status: string) => {
         switch (status) {
             case 'completed': return 'success';
             case 'pending': return 'warning';
@@ -28,6 +30,9 @@ const OrderDetailsModal = ({ isOpen, onClose, order }: { isOpen: boolean, onClos
     const lastTransaction = order.transactions?.length > 0 ? order.transactions[order.transactions.length - 1] : null;
     const paymentUrl = lastTransaction ? `https://gateway.zibal.ir/start/${lastTransaction.trackid}` : '#';
 
+    const orderStatus = order.order_status;
+    const statusInfo = !statusesLoading ? statusesMap[orderStatus] : null;
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`${t('orderDetails')}`}>
             <div className="table-container-simple" style={{ marginBottom: '1.5rem' }}>
@@ -37,7 +42,16 @@ const OrderDetailsModal = ({ isOpen, onClose, order }: { isOpen: boolean, onClos
                         <tr><td>{t('date')}</td><td style={{ textAlign: 'right' }}>{formatDateForDisplay(order.date_created, i18n.language)}</td></tr>
                         <tr><td>{t('description')}</td><td style={{ textAlign: 'right' }}>{order.order_note}</td></tr>
                         <tr><td>{t('totalAmount')}</td><td style={{ textAlign: 'right' }}><strong>{order.order_total.toLocaleString(i18n.language)} {t('priceIRT')}</strong></td></tr>
-                        <tr><td>{t('status')}</td><td style={{ textAlign: 'right' }}><Badge text={order.order_status} type={getStatusBadge(order.order_status)} /></td></tr>
+                        <tr>
+                            <td>{t('status')}</td>
+                            <td style={{ textAlign: 'right' }}>
+                                {statusInfo ? (
+                                    <Badge text={statusInfo.text} color={statusInfo.color} iconPath={statusInfo.iconPath} />
+                                ) : (
+                                    <Badge text={orderStatus} type={getStatusBadgeType(orderStatus)} />
+                                )}
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

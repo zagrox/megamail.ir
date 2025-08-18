@@ -10,12 +10,12 @@ import Icon, { ICONS } from '../components/Icon';
 type AuthMode = 'login' | 'register' | 'forgot';
 
 const AuthView = () => {
-    const { login, loginWithApiKey, register, requestPasswordReset } = useAuth();
+    const { login, register, requestPasswordReset } = useAuth();
     const [mode, setMode] = useState<AuthMode>('login');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [isApiKeyLogin, setIsApiKeyLogin] = useState(false);
-    const { t } = useTranslation();
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const { t, i18n } = useTranslation();
     const { addToast } = useToast();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -24,10 +24,7 @@ const AuthView = () => {
         const form = e.currentTarget;
 
         try {
-            if (isApiKeyLogin) {
-                const apikey = (form.elements.namedItem('apikey') as HTMLInputElement).value;
-                await loginWithApiKey(apikey);
-            } else if (mode === 'login') {
+            if (mode === 'login') {
                 const email = (form.elements.namedItem('email') as HTMLInputElement).value;
                 const password = (form.elements.namedItem('password') as HTMLInputElement).value;
                 await login({ email, password });
@@ -43,12 +40,12 @@ const AuthView = () => {
                 }
                 await register({ email, password, first_name, last_name });
                 addToast(t('registrationSuccessMessage'), 'success');
-                setViewMode('login');
+                setMode('login');
             } else if (mode === 'forgot') {
                 const email = (form.elements.namedItem('email') as HTMLInputElement).value;
                 await requestPasswordReset(email);
                 addToast(t('passwordResetEmailSent'), 'success');
-                setViewMode('login');
+                setMode('login');
             }
         } catch (err: any) {
             let errorMessage = err.message;
@@ -61,20 +58,8 @@ const AuthView = () => {
             setLoading(false);
         }
     };
-
-    const setViewMode = (newMode: AuthMode) => {
-        setMode(newMode);
-        setIsApiKeyLogin(false);
-    }
-    
-    const getTitle = () => {
-        if (mode === 'forgot') return t('forgotPasswordTitle');
-        if (mode === 'login') return t('signIn');
-        return t('signUp');
-    }
     
     const getSubtitle = () => {
-         if (isApiKeyLogin) return t('signInWithApiKeySubtitle');
          if (mode === 'forgot') return t('forgotPasswordSubtitle');
          if (mode === 'login') return t('signInSubtitle');
          return t('createAccountSubtitle');
@@ -88,15 +73,7 @@ const AuthView = () => {
 
                 <form className="auth-form" onSubmit={handleSubmit}>
 
-                    {isApiKeyLogin ? (
-                        <div className="input-group has-btn">
-                            <span className="input-icon"><Icon path={ICONS.KEY} /></span>
-                            <input name="apikey" type={showPassword ? "text" : "password"} placeholder={t('enterYourApiKey')} required />
-                            <button type="button" className="input-icon-btn" onClick={() => setShowPassword(!showPassword)}>
-                                <Icon path={showPassword ? ICONS.EYE_OFF : ICONS.EYE} />
-                            </button>
-                        </div>
-                    ) : mode === 'login' ? (
+                    {mode === 'login' ? (
                          <>
                             <div className="input-group">
                                 <span className="input-icon"><Icon path={ICONS.MAIL} /></span>
@@ -110,7 +87,7 @@ const AuthView = () => {
                                 </button>
                             </div>
                              <div style={{ textAlign: 'right', fontSize: '0.9rem', marginTop: '-0.5rem', marginBottom: '1rem' }}>
-                                <button type="button" className="link-button" onClick={() => setViewMode('forgot')}>
+                                <button type="button" className="link-button" onClick={() => setMode('forgot')}>
                                     {t('forgotPassword')}
                                 </button>
                             </div>
@@ -133,11 +110,17 @@ const AuthView = () => {
                             </div>
                             <div className="input-group has-btn">
                                 <span className="input-icon"><Icon path={ICONS.LOCK} /></span>
-                                <input name="password" type="password" placeholder={t('password')} required />
+                                <input name="password" type={showPassword ? "text" : "password"} placeholder={t('password')} required />
+                                <button type="button" className="input-icon-btn" onClick={() => setShowPassword(!showPassword)}>
+                                    <Icon path={showPassword ? ICONS.EYE_OFF : ICONS.EYE} />
+                                </button>
                             </div>
-                            <div className="input-group">
+                            <div className="input-group has-btn">
                                 <span className="input-icon"><Icon path={ICONS.LOCK} /></span>
-                                <input name="confirm_password" type="password" placeholder={t('confirmPassword')} required />
+                                <input name="confirm_password" type={showConfirmPassword ? "text" : "password"} placeholder={t('confirmPassword')} required />
+                                <button type="button" className="input-icon-btn" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                    <Icon path={showConfirmPassword ? ICONS.EYE_OFF : ICONS.EYE} />
+                                </button>
                             </div>
                         </>
                     ) : ( // mode === 'forgot'
@@ -152,22 +135,26 @@ const AuthView = () => {
                     </button>
                 </form>
 
-                {mode !== 'forgot' && (
-                    <>
-                        <div className="auth-separator">{t('or')}</div>
-                        <button className="btn btn-secondary" onClick={() => setIsApiKeyLogin(!isApiKeyLogin)}>
-                            {isApiKeyLogin ? t('signInWithEmail') : t('signInWithApiKey')}
-                        </button>
-                    </>
-                )}
-
                 <div className="auth-switch">
-                    {mode === 'login' ? t('noAccount') : mode === 'register' ? t('alreadyHaveAccount') : ''}
-                    {mode !== 'forgot' ? (
-                         <button onClick={() => setViewMode(mode === 'login' ? 'register' : 'login')}>{mode === 'login' ? t('signUp') : t('signIn')}</button>
+                    {mode === 'login' ? (
+                        <>
+                            <p>{t('noAccount')}</p>
+                            <button type="button" className="auth-switch-button" onClick={() => setMode('register')}>{t('signUpNow')}</button>
+                        </>
+                    ) : mode === 'register' ? (
+                        <>
+                            <p>{t('alreadyHaveAccount')}</p>
+                            <button type="button" className="auth-switch-button" onClick={() => setMode('login')}>{t('signIn')}</button>
+                        </>
                     ) : (
-                        <button onClick={() => setViewMode('login')} className="link-button">{t('backToSignIn')}</button>
+                        <button type="button" className="link-button" onClick={() => setMode('login')}>{t('backToSignIn')}</button>
                     )}
+                </div>
+
+                <div className="auth-language-switcher">
+                    <button onClick={() => i18n.changeLanguage('en')} className={i18n.language.startsWith('en') ? 'active' : ''}>EN</button>
+                    <span>/</span>
+                    <button onClick={() => i18n.changeLanguage('fa')} className={i18n.language.startsWith('fa') ? 'active' : ''}>FA</button>
                 </div>
             </div>
         </div>

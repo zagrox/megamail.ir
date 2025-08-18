@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import useApi from './useApi';
@@ -192,7 +193,7 @@ const BuyCreditsView = ({ apiKey, user, setView }: { apiKey: string, user: any, 
                 user_created: user.id,
                 order_total: pkg.packprice,
                 project_name: "Mailzila",
-                order_note: pkg.packname || `Package of ${pkg.packsize} credits`,
+                order_note: String(pkg.packsize),
                 order_status: "pending",
             };
 

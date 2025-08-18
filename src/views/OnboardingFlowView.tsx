@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -55,7 +56,7 @@ const Step3 = ({ data, setData }: { data: any, setData: Function }) => {
         <div className="onboarding-step">
             <h2>{t('profileTitle')}</h2>
             <p>{t('profileSubtitle')}</p>
-            <form className="auth-form" style={{textAlign: 'left', maxWidth: '400px', margin: '0 auto'}}>
+            <form className="auth-form" style={{maxWidth: '400px', margin: '0 auto'}}>
                 <div className="form-group">
                     <label htmlFor="company">{t('company')}</label>
                     <input id="company" name="company" type="text" value={data.company} onChange={handleChange} />

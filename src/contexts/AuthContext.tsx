@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useEffect, useCallback, ReactNode, createContext, useContext } from 'react';
 import { readMe, registerUser, updateMe, updateUser as sdkUpdateUser, createItem, readItems, updateItem } from '@directus/sdk';
 import sdk from '../api/directus';
@@ -68,7 +65,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 } else {
                     // Create a new profile. Directus will automatically link it to the
                     // current user via the `user_created` system field.
-                    profileData = await sdk.request(createItem('profiles', {}));
+                    // A default status is often required by Directus schemas.
+                    profileData = await sdk.request(createItem('profiles', { status: 'published' }));
                 }
 
                 // Merge profile data with the main user record. Spreading `me` last ensures
@@ -85,8 +83,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
                 setUser(mergedUser);
 
-            } catch (profileError) {
-                console.error("Failed to fetch or create user profile. Logging in with base user data.", profileError);
+            } catch (profileError: any) {
+                let errorMessage = "An unknown error occurred while fetching/creating the user profile.";
+                if (profileError && profileError.errors && Array.isArray(profileError.errors) && profileError.errors[0]?.message) {
+                    errorMessage = profileError.errors[0].message;
+                } else if (profileError && profileError.message) {
+                    errorMessage = profileError.message;
+                }
+                console.error("Failed to fetch or create user profile. Logging in with base user data. Error:", errorMessage, profileError);
                 setUser(me);
             }
 

@@ -60,6 +60,7 @@ const resources = {
       // Auth
       signIn: 'Sign In',
       signUp: 'Sign Up',
+      signUpNow: 'Sign Up Now',
       signInWithEmail: 'Sign In with Email',
       signInWithApiKey: 'Sign In with API Key',
       signInSubtitle: 'Welcome back! Please login to your account.',
@@ -716,6 +717,7 @@ const resources = {
       // Auth
       signIn: 'ورود',
       signUp: 'ثبت نام',
+      signUpNow: 'ثبت نام کنید',
       signInWithEmail: 'ورود با ایمیل',
       signInWithApiKey: 'ورود با کلید API',
       signInSubtitle: 'خوش آمدید! لطفاً وارد حساب کاربری خود شوید.',

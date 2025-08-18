@@ -10,6 +10,7 @@ import Icon, { ICONS } from '../../components/Icon';
 import OrderDetailsModal from './OrderDetailsModal';
 import { formatDateRelative } from '../../utils/helpers';
 import Badge from '../../components/Badge';
+import { useOrderStatuses } from '../../hooks/useOrderStatuses';
 
 const OrdersTab = () => {
     const { t, i18n } = useTranslation();
@@ -18,6 +19,7 @@ const OrdersTab = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<{ message: string, endpoint: string } | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+    const { statusesMap, loading: statusesLoading } = useOrderStatuses();
 
     useEffect(() => {
         if (!user || !user.id) {
@@ -67,7 +69,7 @@ const OrdersTab = () => {
         fetchOrders();
     }, [user, t]);
 
-    const getStatusBadge = (status: string) => {
+    const getStatusBadgeType = (status: string) => {
         switch (status) {
             case 'completed': return 'success';
             case 'pending': return 'warning';
@@ -112,19 +114,30 @@ const OrdersTab = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {orders.map(order => (
-                                    <tr key={order.id}>
-                                        <td>{order.order_note}</td>
-                                        <td>{formatDateRelative(order.date_created, i18n.language)}</td>
-                                        <td>{order.order_total.toLocaleString(i18n.language)} {t('priceIRT')}</td>
-                                        <td><Badge text={order.order_status} type={getStatusBadge(order.order_status)} /></td>
-                                        <td style={{ textAlign: 'right' }}>
-                                            <button className="btn-icon btn-icon-primary" onClick={() => setSelectedOrder(order)} aria-label={t('orderDetails')}>
-                                                <Icon path={ICONS.EYE} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {orders.map(order => {
+                                    const orderStatus = order.order_status;
+                                    const statusInfo = !statusesLoading ? statusesMap[orderStatus] : null;
+
+                                    return (
+                                        <tr key={order.id}>
+                                            <td>{order.order_note}</td>
+                                            <td>{formatDateRelative(order.date_created, i18n.language)}</td>
+                                            <td>{order.order_total.toLocaleString(i18n.language)} {t('priceIRT')}</td>
+                                            <td>
+                                                {statusInfo ? (
+                                                    <Badge text={statusInfo.text} color={statusInfo.color} iconPath={statusInfo.iconPath} />
+                                                ) : (
+                                                    <Badge text={orderStatus} type={getStatusBadgeType(orderStatus)} />
+                                                )}
+                                            </td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                <button className="btn-icon btn-icon-primary" onClick={() => setSelectedOrder(order)} aria-label={t('orderDetails')}>
+                                                    <Icon path={ICONS.EYE} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
