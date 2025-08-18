@@ -36,3 +36,9 @@ export type FileInfo = {
     DateAdded: string;
     ExpiresAfterDays?: number;
 };
+export type Template = {
+    Name: string;
+    DateAdded: string;
+    Subject?: string;
+    Body: { Content: string }[];
+};

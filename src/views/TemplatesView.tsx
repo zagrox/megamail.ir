@@ -10,13 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import Modal from '../components/Modal';
 import Icon, { ICONS } from '../components/Icon';
 import ConfirmModal from '../components/ConfirmModal';
-
-type Template = {
-    Name: string;
-    DateAdded: string;
-    Subject?: string;
-    Body: { Content: string }[];
-};
+import { Template } from '../api/types';
 
 const TemplatePreviewModal = ({ isOpen, onClose, template }: { isOpen: boolean; onClose: () => void; template: Template | null }) => {
     const { t } = useTranslation();
@@ -53,7 +47,7 @@ const TemplateCard = ({ template, onPreview, onUse, onDelete }: { template: Temp
     );
 };
 
-const TemplatesView = ({ apiKey, setView }: { apiKey: string; setView: (view: string) => void }) => {
+const TemplatesView = ({ apiKey, setView }: { apiKey: string; setView: (view: string, data?: { template: Template }) => void }) => {
     const { t } = useTranslation();
     const { addToast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
@@ -148,7 +142,7 @@ const TemplatesView = ({ apiKey, setView }: { apiKey: string; setView: (view: st
                                     key={template.Name}
                                     template={template}
                                     onPreview={() => setTemplateToPreview(template)}
-                                    onUse={() => setView('Email Builder')}
+                                    onUse={() => setView('Email Builder', { template })}
                                     onDelete={() => setTemplateToDelete(template)}
                                 />
                             ))}

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import useApi from './useApi';
@@ -107,7 +108,7 @@ const BalanceDisplayCard = ({ creditLoading, creditError, accountData, onHistory
     );
 };
 
-const BuyCreditsView = ({ apiKey, user, setView }: { apiKey: string, user: any, setView: (view: string) => void }) => {
+const BuyCreditsView = ({ apiKey, user, setView }: { apiKey: string, user: any, setView: (view: string, data?: any) => void }) => {
     const { t, i18n } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isPaying, setIsPaying] = useState(false);

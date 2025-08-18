@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -26,7 +27,7 @@ import AccountDataCard from '../components/AccountDataCard';
 import Icon, { ICONS } from '../components/Icon';
 import { SortableNavCard } from '../components/SortableNavCard';
 
-const DashboardView = ({ setView, apiKey, user, isEmbed = false }: { setView: (view: string) => void, apiKey: string, user: any, isEmbed?: boolean }) => {
+const DashboardView = ({ setView, apiKey, user, isEmbed = false }: { setView: (view: string, data?: any) => void, apiKey: string, user: any, isEmbed?: boolean }) => {
     const { t, i18n } = useTranslation();
     const apiParams = useMemo(() => ({ from: formatDateForApiV4(getPastDateByDays(365)) }), []);
     const { data: statsData, loading: statsLoading, error: statsError } = useApiV4(`/statistics`, apiKey, apiParams);

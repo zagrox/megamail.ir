@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import useApiV4 from '../hooks/useApiV4';
@@ -112,7 +113,7 @@ const CampaignCard = ({ campaign, onSelect, stats, loadingStats }: { campaign: a
     );
 };
 
-const CampaignsView = ({ apiKey, setView }: { apiKey: string, setView: (view: string) => void }) => {
+const CampaignsView = ({ apiKey, setView }: { apiKey: string, setView: (view: string, data?: any) => void }) => {
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCampaign, setSelectedCampaign] = useState<any | null>(null);
@@ -211,7 +212,7 @@ const CampaignsView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                     />
                 </div>
                 <div className="header-actions">
-                    <button className="btn btn-primary" onClick={() => setView('Send Email')}>
+                    <button className="btn btn-primary" onClick={() => setView('Email Builder')}>
                         <Icon path={ICONS.PLUS} /> {t('createCampaign')}
                     </button>
                 </div>

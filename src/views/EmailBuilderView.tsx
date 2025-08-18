@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -24,17 +21,45 @@ import Toolbar, { TOOLBAR_COMPONENTS } from '../components/email_builder/Toolbar
 import Canvas from '../components/email_builder/Canvas';
 import { renderBlock } from '../components/email_builder/blocks';
 import MediaManagerModal from '../components/media_manager/MediaManagerModal';
-import { FileInfo } from '../api/types';
+import { FileInfo, Template } from '../api/types';
 import { ELASTIC_EMAIL_API_V4_BASE } from '../api/config';
 import { useToast } from '../contexts/ToastContext';
 import Loader from '../components/Loader';
 import SettingsPanel from '../components/email_builder/SettingsPanel';
-import useApiV4 from '../hooks/useApiV4';
 import Modal from '../components/Modal';
 import { apiFetchV4 } from '../api/elasticEmail';
 
 
 const generateId = (prefix = 'block') => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// --- START UNICODE-SAFE BASE64 HELPERS ---
+// Encode a UTF-8 string to Base64 using modern browser APIs
+const encodeState = (str: string): string => {
+    // 1. Encode the string to a Uint8Array of UTF-8 bytes.
+    const bytes = new TextEncoder().encode(str);
+    // 2. Create a binary string from the byte array.
+    let binary = '';
+    bytes.forEach(byte => {
+        binary += String.fromCharCode(byte);
+    });
+    // 3. Base64 encode the binary string.
+    return window.btoa(binary);
+}
+
+// Decode a Base64 string to UTF-8 using modern browser APIs
+const decodeState = (base64: string): string => {
+    // 1. Decode the Base64 string to a binary string.
+    const binary_string = window.atob(base64);
+    // 2. Create a Uint8Array from the binary string.
+    const bytes = new Uint8Array(binary_string.length);
+    for (let i = 0; i < binary_string.length; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    // 3. Decode the UTF-8 bytes back to a string.
+    return new TextDecoder().decode(bytes);
+}
+// --- END UNICODE-SAFE BASE64 HELPERS ---
+
 
 // --- START HTML GENERATION ---
 const styleObjectToString = (style: React.CSSProperties | undefined): string => {
@@ -202,7 +227,7 @@ const findBlockById = (items: any[], id: string): any | null => {
 };
 
 
-const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
+const EmailBuilderView = ({ apiKey, user, templateToEdit }: { apiKey: string; user: any; templateToEdit: Template | null; }) => {
     const { t } = useTranslation();
     const { addToast } = useToast();
     const [items, setItems] = useState<any[]>([]);
@@ -212,8 +237,8 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
     const [editingImageBlockId, setEditingImageBlockId] = useState<string | null>(null);
     const [isUpdatingImage, setIsUpdatingImage] = useState(false);
     const canvasWrapperRef = useRef<HTMLDivElement>(null);
-    const [latestImageContent, setLatestImageContent] = useState<{ src: string, alt: string } | null>(null);
-
+    const [isEditing, setIsEditing] = useState(false);
+    const [originalTemplateName, setOriginalTemplateName] = useState<string | null>(null);
     const [isMobileView, setIsMobileView] = useState(false);
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
@@ -235,13 +260,6 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
         defaultTextColor: '#333333',
     });
 
-    const { data: filesData } = useApiV4(
-        '/files',
-        apiKey,
-        { limit: 100 },
-        1 // Only fetch once on mount
-    );
-
     const toBase64 = (blob: Blob) => new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(blob);
@@ -249,41 +267,65 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
         reader.onerror = error => reject(error);
     });
     
-    useEffect(() => {
-        if (!filesData || !Array.isArray(filesData)) return;
+     useEffect(() => {
+        const resetToNew = () => {
+            setIsEditing(false);
+            setOriginalTemplateName(null);
+            setTemplateName(t('newTemplateName'));
+            setSubject('');
+            setItems([]);
+            setGlobalStyles({
+                backdropColor: '#F7F9FC',
+                canvasColor: '#FFFFFF',
+                canvasBorderRadius: 0,
+                canvasBorderColor: 'transparent',
+                defaultFontFamily: "'Inter', Arial, sans-serif",
+                defaultTextColor: '#333333',
+            });
+        };
 
-        const imageFiles = filesData
-            .filter((file: FileInfo) => /\.(jpe?g|png|gif|webp|svg)$/i.test(file.FileName))
-            .sort((a, b) => new Date(b.DateAdded).getTime() - new Date(a.DateAdded).getTime());
+        if (templateToEdit) {
+            setIsEditing(true);
+            setOriginalTemplateName(templateToEdit.Name);
+            const htmlContent = templateToEdit.Body?.[0]?.Content;
+            
+            if (htmlContent) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlContent, 'text/html');
+                const stateContainer = doc.getElementById('mailzila-template-state');
+                const base64State = stateContainer?.getAttribute('data-state');
 
-        if (imageFiles.length > 0) {
-            const latestImage = imageFiles[0];
-            let isCancelled = false;
-
-            const fetchAndSetLatestImage = async () => {
-                try {
-                    const url = `${ELASTIC_EMAIL_API_V4_BASE}/files/${encodeURIComponent(latestImage.FileName)}`;
-                    const response = await fetch(url, { headers: { 'X-ElasticEmail-ApiKey': apiKey } });
-                    if (!response.ok) throw new Error(`Failed to fetch latest image: ${response.statusText}`);
-
-                    const blob = await response.blob();
-                    const base64 = await toBase64(blob);
-
-                    if (!isCancelled) {
-                        setLatestImageContent({ src: base64, alt: latestImage.FileName });
+                if (base64State) {
+                    try {
+                        const jsonState = decodeState(base64State);
+                        const state = JSON.parse(jsonState);
+                        setGlobalStyles(state.globalStyles || globalStyles);
+                        setItems(state.items || []);
+                        setSubject(state.subject || templateToEdit.Subject || '');
+                        setTemplateName(state.templateName || templateToEdit.Name);
+                        return; // Exit after successful parsing
+                    } catch (e) {
+                        console.error("Failed to parse template state from HTML.", e);
                     }
-                } catch (error) {
-                    console.error("Failed to preload latest image:", error);
                 }
+            }
+            
+            // Fallback for old templates or parsing errors
+            addToast(t('This template is from an older version and could not be fully loaded into the editor. Its content has been placed in a text block.'), 'warning');
+            setTemplateName(templateToEdit.Name);
+            setSubject(templateToEdit.Subject || '');
+            const fallbackBlock = {
+                id: generateId('text'),
+                type: 'Text',
+                content: { html: templateToEdit.Body?.[0]?.Content || '' },
+                style: TOOLBAR_COMPONENTS.find(c => c.type === 'Text')!.defaultStyle,
             };
+            setItems([fallbackBlock]);
 
-            fetchAndSetLatestImage();
-
-            return () => {
-                isCancelled = true;
-            };
+        } else {
+            resetToNew();
         }
-    }, [filesData, apiKey]);
+    }, [templateToEdit, addToast, t]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -310,6 +352,10 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
         });
         
         const contentHtml = items.map(renderBlockToHtml).join('');
+        
+        const state = { globalStyles, items, subject, templateName };
+        const jsonState = JSON.stringify(state);
+        const base64State = encodeState(jsonState);
 
         return `
             <!DOCTYPE html>
@@ -323,6 +369,7 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
                 </style>
             </head>
             <body style="${bodyStyle}">
+                <div id="mailzila-template-state" style="display:none !important; mso-hide:all;" data-state="${base64State}"></div>
                 <center>
                     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto;">
                         <tr>
@@ -341,7 +388,7 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
             </body>
             </html>
         `;
-    }, [items, globalStyles, subject]);
+    }, [items, globalStyles, subject, templateName]);
     
     const handleSaveTemplate = async () => {
         if (!templateName) {
@@ -355,43 +402,40 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
             Name: templateName,
             Subject: subject,
             Body: [{
-                ContentType: "HTML",
+                ContentType: "HTML" as const,
                 Content: htmlContent,
                 Charset: "utf-8"
             }],
-            TemplateScope: "Personal"
+            TemplateScope: "Personal" as const
         };
     
         try {
-            let existingTemplate = null;
-            try {
-                // Check if a template with this name already exists
-                existingTemplate = await apiFetchV4(`/templates/${encodeURIComponent(templateName)}`, apiKey);
-            } catch (e: any) {
-                // A 404 error is expected if the template is new, so we can ignore it.
-                if (e.message.includes('404')) {
-                    // Not found, which is fine for creation.
-                } else {
-                    throw e; // Re-throw other errors
-                }
-            }
-    
-            if (existingTemplate) {
-                // If it exists, update it (PUT)
-                await apiFetchV4(`/templates/${encodeURIComponent(templateName)}`, apiKey, { method: 'PUT', body: payload });
+            if (isEditing) {
+                // UPDATE or RENAME. Endpoint uses the *original* name before this save.
+                const endpoint = `/templates/${encodeURIComponent(originalTemplateName!)}`;
+                await apiFetchV4(endpoint, apiKey, { method: 'PUT', body: payload });
             } else {
-                // If it doesn't exist, create it (POST)
+                // CREATE new template. The API will reject if the name already exists.
                 await apiFetchV4('/templates', apiKey, { method: 'POST', body: payload });
             }
     
             addToast(t('saveTemplateSuccess', { name: templateName }), 'success');
+            setOriginalTemplateName(templateName); // After saving, the current name is the new original.
+            setIsEditing(true); // It's now an existing template.
+    
         } catch (err: any) {
-            addToast(t('saveTemplateError', { error: err.message }), 'error');
+            let errorMessage = err.message;
+            // Provide more user-friendly error messages based on API responses.
+            if (err.message?.includes('already exists')) {
+                errorMessage = `A template named "${templateName}" already exists. Please choose a different name.`;
+            } else if (err.message?.includes('Could not find specified template name')) {
+                errorMessage = `The original template "${originalTemplateName}" was not found and could not be updated. It might have been deleted.`;
+            }
+            addToast(t('saveTemplateError', { error: errorMessage }), 'error');
         } finally {
             setIsSaving(false);
         }
     };
-    
 
     const toggleMobileView = () => setIsMobileView(v => !v);
 

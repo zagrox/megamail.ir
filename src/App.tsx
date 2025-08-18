@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
@@ -25,12 +26,14 @@ import Icon from './components/Icon';
 import EmbedView from './views/EmbedView';
 import ResetPasswordView from './views/ResetPasswordView';
 import CallbackView from './views/CallbackView';
+import { Template } from './api/types';
 
 
 const App = () => {
     const { isAuthenticated, loading, user, logout } = useAuth();
     const { t, i18n } = useTranslation();
     const [view, setView] = useState('Dashboard');
+    const [templateToEdit, setTemplateToEdit] = useState<Template | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const appContainerRef = useRef<HTMLDivElement>(null);
 
@@ -171,7 +174,12 @@ const App = () => {
         setView('Dashboard');
     };
 
-    const handleSetView = (newView: string) => {
+    const handleSetView = (newView: string, data?: { template?: Template }) => {
+        if (newView === 'Email Builder' && data?.template) {
+            setTemplateToEdit(data.template);
+        } else {
+            setTemplateToEdit(null);
+        }
         setView(newView);
         setIsMobileMenuOpen(false);
     }
@@ -187,7 +195,7 @@ const App = () => {
         'Media Manager': { component: <MediaManagerView apiKey={apiKey} />, title: t('mediaManager'), icon: ICONS.FOLDER },
         'Campaigns': { component: <CampaignsView apiKey={apiKey} setView={handleSetView} />, title: t('campaigns'), icon: ICONS.CAMPAIGNS },
         'Templates': { component: <TemplatesView apiKey={apiKey} setView={handleSetView} />, title: t('templates'), icon: ICONS.ARCHIVE },
-        'Email Builder': { component: <EmailBuilderView apiKey={apiKey} user={user} />, title: t('emailBuilder'), icon: ICONS.SEND_EMAIL },
+        'Email Builder': { component: <EmailBuilderView apiKey={apiKey} user={user} templateToEdit={templateToEdit} />, title: t('emailBuilder'), icon: ICONS.SEND_EMAIL },
         'Domains': { component: <DomainsView apiKey={apiKey} />, title: t('domains'), icon: ICONS.DOMAINS },
         'SMTP': { component: <SmtpView apiKey={apiKey} user={user}/>, title: t('smtp'), icon: ICONS.SMTP }
     };

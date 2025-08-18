@@ -651,6 +651,7 @@ const resources = {
       templateNameRequired: 'Template name is required.',
       saveTemplateSuccess: 'Template "{{name}}" saved successfully!',
       saveTemplateError: 'Failed to save template: {{error}}',
+      newTemplateName: 'New Template',
       // Order History
       orders: 'Orders',
       totalAmount: 'Total Amount',
@@ -1309,6 +1310,7 @@ const resources = {
       templateNameRequired: 'نام قالب الزامی است.',
       saveTemplateSuccess: 'قالب «{{name}}» با موفقیت ذخیره شد!',
       saveTemplateError: 'خطا در ذخیره قالب: {{error}}',
+      newTemplateName: 'قالب جدید',
       // Order History
       orders: 'سفارشات',
       totalAmount: 'مبلغ کل',
