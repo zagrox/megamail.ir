@@ -1,11 +1,11 @@
 
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Icon, { ICONS } from '../../components/Icon';
 import { DIRECTUS_URL } from '../../api/config';
 import Badge from '../../components/Badge';
 import EditProfileModal from './EditProfileModal';
+import { useStatusStyles } from '../../hooks/useStatusStyles';
 
 const ProfileField = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
     <div className="form-group">
@@ -18,6 +18,7 @@ const ProfileField = ({ label, value }: { label: string; value: string | number 
 const ProfileTab = ({ accountData, user }: { accountData: any, user: any }) => {
     const { t, i18n } = useTranslation();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const { getStatusStyle } = useStatusStyles();
 
     if (!user) {
         return null; 
@@ -36,14 +37,9 @@ const ProfileTab = ({ accountData, user }: { accountData: any, user: any }) => {
         }
         return role; // Fallback for role ID or simple string
     }
-
-    const getStatusType = (status: string | undefined) => {
-        const lowerStatus = (status || '').toLowerCase();
-        if (lowerStatus === 'active') return 'success';
-        if (lowerStatus === 'archived' || lowerStatus === 'suspended') return 'danger';
-        return 'default';
-    }
-
+    
+    const roleStyle = getStatusStyle('info');
+    const statusStyle = getStatusStyle(user.status);
 
     return (
         <div className="account-tab-content">
@@ -65,8 +61,8 @@ const ProfileTab = ({ accountData, user }: { accountData: any, user: any }) => {
                         <h3>{fullName || t('userProfile')}</h3>
                         <p className="profile-email">{email || 'N/A'}</p>
                         <div className="profile-meta">
-                            {user.role && <Badge text={getRoleName(user.role)} type="info" />}
-                            {user.status && <Badge text={user.status} type={getStatusType(user.status)} />}
+                            {user.role && <Badge text={getRoleName(user.role)} type={roleStyle.type} />}
+                            {user.status && <Badge text={statusStyle.text} type={statusStyle.type} iconPath={statusStyle.iconPath} />}
                         </div>
                     </div>
                 </div>

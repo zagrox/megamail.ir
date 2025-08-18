@@ -7,18 +7,12 @@ import LanguageSwitcher from '../../components/LanguageSwitcher';
 import AccountDataCard from '../../components/AccountDataCard';
 import Icon, { ICONS } from '../../components/Icon';
 import Badge from '../../components/Badge';
+import { useStatusStyles } from '../../hooks/useStatusStyles';
 
 const GeneralTab = ({ accountData, contactsCountData, contactsCountLoading, installPrompt, handleInstallClick }: { accountData: any, contactsCountData: any, contactsCountLoading: boolean, installPrompt: any, handleInstallClick: () => void }) => {
     const { t, i18n } = useTranslation();
     const { logout } = useAuth();
-
-    const getStatusType = (status: string) => {
-        const cleanStatus = String(status || '').toLowerCase().replace(/\s/g, '');
-        if (cleanStatus.includes('active')) return 'success';
-        if (cleanStatus.includes('disabled') || cleanStatus.includes('abuse')) return 'danger';
-        if (cleanStatus.includes('review') || cleanStatus.includes('verification')) return 'warning';
-        return 'default';
-    }
+    const { getStatusStyle } = useStatusStyles();
 
     const getReputationInfo = (reputation: number) => {
         const score = Number(reputation || 0);
@@ -30,14 +24,14 @@ const GeneralTab = ({ accountData, contactsCountData, contactsCountLoading, inst
     };
     
     const accountStatus = accountData?.status || 'Active';
-    const statusType = getStatusType(accountStatus);
+    const statusStyle = getStatusStyle(accountStatus);
     const reputation = getReputationInfo(accountData?.reputation);
     
     return (
         <div className="account-tab-content">
             <div className="card-grid account-grid">
                 <AccountDataCard title={t('accountStatus')} iconPath={ICONS.VERIFY}>
-                    <Badge text={accountStatus} type={statusType} />
+                    <Badge text={statusStyle.text} type={statusStyle.type} iconPath={statusStyle.iconPath} />
                 </AccountDataCard>
                 <AccountDataCard title={t('reputation')} iconPath={ICONS.TRENDING_UP}>
                     <span className={`reputation-score ${reputation.className}`}>{accountData?.reputation ?? 0}%</span>

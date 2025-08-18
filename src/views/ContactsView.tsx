@@ -12,9 +12,12 @@ import Modal from '../components/Modal';
 import Icon, { ICONS } from '../components/Icon';
 import Badge from '../components/Badge';
 import ConfirmModal from '../components/ConfirmModal';
+import { useStatusStyles } from '../hooks/useStatusStyles';
 
 const ContactDetailModal = ({ isOpen, onClose, contactData, isLoading, error }: { isOpen: boolean; onClose: () => void; contactData: Contact | null; isLoading: boolean; error: string | null; }) => {
     const { t, i18n } = useTranslation();
+    const { getStatusStyle } = useStatusStyles();
+    
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={isLoading ? t('loading') : contactData?.Email || t('contactDetails')}>
             {isLoading && <CenteredMessage><Loader /></CenteredMessage>}
@@ -22,7 +25,10 @@ const ContactDetailModal = ({ isOpen, onClose, contactData, isLoading, error }: 
             {contactData && (
                 <div className="contact-details-grid">
                     <dt>{t('email')}</dt><dd>{contactData.Email}</dd>
-                    <dt>{t('status')}</dt><dd><Badge text={contactData.Status} type={contactData.Status === 'Active' ? 'success' : 'default'}/></dd>
+                    <dt>{t('status')}</dt><dd>{(() => {
+                        const statusStyle = getStatusStyle(contactData.Status);
+                        return <Badge text={statusStyle.text} type={statusStyle.type} iconPath={statusStyle.iconPath} />
+                    })()}</dd>
                     <dt>{t('firstName')}</dt><dd>{contactData.FirstName || '-'}</dd>
                     <dt>{t('lastName')}</dt><dd>{contactData.LastName || '-'}</dd>
                     <dt>{t('source')}</dt><dd>{contactData.Source || '-'}</dd>
@@ -164,6 +170,9 @@ const ImportContactsModal = ({ isOpen, onClose, apiKey, onSuccess, onError }: { 
 
 const ContactCard = React.memo(({ contact, onView, onDelete }: { contact: Contact; onView: (email: string) => void; onDelete: (email: string) => void; }) => {
     const { t, i18n } = useTranslation();
+    const { getStatusStyle } = useStatusStyles();
+    const statusStyle = getStatusStyle(contact.Status);
+
     return (
         <div className="card contact-card">
             <div className="contact-card-main">
@@ -172,7 +181,7 @@ const ContactCard = React.memo(({ contact, onView, onDelete }: { contact: Contac
                     <p className="contact-card-email">{contact.Email}</p>
                 </div>
                 <div className="contact-card-status">
-                    <Badge text={contact.Status} type={contact.Status === 'Active' ? 'success' : 'default'} />
+                    <Badge text={statusStyle.text} type={statusStyle.type} iconPath={statusStyle.iconPath} />
                 </div>
             </div>
             <div className="contact-card-footer">

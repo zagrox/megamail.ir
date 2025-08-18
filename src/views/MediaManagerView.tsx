@@ -173,7 +173,7 @@ const MediaManagerView = ({ apiKey }: { apiKey: string }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    const FILES_PER_PAGE = viewMode === 'grid' ? 18 : 12;
+    const FILES_PER_PAGE = viewMode === 'grid' ? 24 : 12;
 
     const refetch = () => setRefetchIndex(i => i + 1);
 

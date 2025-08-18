@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import useApiV4 from '../hooks/useApiV4';
@@ -10,6 +9,7 @@ import ErrorMessage from '../components/ErrorMessage';
 import Icon, { ICONS } from '../components/Icon';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
+import { useStatusStyles } from '../hooks/useStatusStyles';
 
 const CampaignDetailModal = ({ campaign, apiKey, isOpen, onClose }: { campaign: any, apiKey: string, isOpen: boolean, onClose: () => void }) => {
     const { t, i18n } = useTranslation();
@@ -63,33 +63,14 @@ const CampaignDetailModal = ({ campaign, apiKey, isOpen, onClose }: { campaign: 
 
 const CampaignCard = ({ campaign, onSelect, stats, loadingStats }: { campaign: any; onSelect: () => void; stats: { Delivered: number, Opened: number } | null; loadingStats: boolean; }) => {
     const { t, i18n } = useTranslation();
-
-    const getBadgeTypeForStatus = (statusName: string | undefined) => {
-        const lowerStatus = (statusName || '').toLowerCase().replace(/\s/g, '');
-        switch (lowerStatus) {
-            case 'completed':
-                return 'success';
-            case 'active':
-            case 'processing':
-            case 'sending':
-                return 'info';
-            case 'paused':
-            case 'cancelled':
-                return 'warning';
-            case 'deleted':
-                return 'danger';
-            case 'draft':
-                return 'default';
-            default:
-                return 'default';
-        }
-    };
+    const { getStatusStyle } = useStatusStyles();
+    const statusStyle = getStatusStyle(campaign.Status);
 
     return (
         <div className="card campaign-card">
             <div className="campaign-card-header" onClick={onSelect} role="button" tabIndex={0} onKeyPress={(e) => (e.key === 'Enter' || e.key === ' ') && onSelect()}>
                 <h3>{campaign.Name}</h3>
-                <Badge text={campaign.Status ?? t('unknown')} type={getBadgeTypeForStatus(campaign.Status)} />
+                <Badge text={statusStyle.text} type={statusStyle.type} iconPath={statusStyle.iconPath} />
             </div>
             <div className="campaign-card-body">
                 <p className="campaign-subject">

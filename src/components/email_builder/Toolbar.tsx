@@ -179,7 +179,6 @@ const Toolbar = ({ onAddComponent }: { onAddComponent: (type: string) => void })
     const { t } = useTranslation();
     return (
         <aside className="builder-toolbar">
-            <h3>{t('components')}</h3>
             <div className="toolbar-grid">
                 {TOOLBAR_COMPONENTS.map(comp => (
                     <ToolbarItem key={comp.id} component={comp} onAddComponent={onAddComponent} />

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, ReactNode, createContext, useContext } from 'react';
 import { readMe, registerUser, updateMe, updateUser as sdkUpdateUser, createItem, readItems, updateItem } from '@directus/sdk';
 import sdk from '../api/directus';
@@ -197,9 +198,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const requestPasswordReset = async (email: string) => {
+        // Construct the reset URL dynamically based on the current application's origin.
+        // This makes the password reset flow work across different environments (dev, staging, prod)
+        // without hardcoding URLs. The '/reset-password' path is handled by the App's router.
+        const reset_url = `${window.location.origin}/reset-password`;
         const payload = {
             email,
-            reset_url: 'https://my.mailzila.com/#/reset-password',
+            reset_url,
         };
         await sdk.request(() => ({
             method: 'POST',

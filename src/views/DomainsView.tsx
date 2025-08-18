@@ -9,6 +9,7 @@ import { useToast } from '../contexts/ToastContext';
 import Icon, { ICONS } from '../components/Icon';
 import Badge from '../components/Badge';
 import ConfirmModal from '../components/ConfirmModal';
+import { useStatusStyles } from '../hooks/useStatusStyles';
 
 const DNS_RECORDS_CONFIG = {
     SPF: {
@@ -45,13 +46,18 @@ type VerificationStatus = 'idle' | 'checking' | 'verified' | 'failed';
 
 const VerificationStatusIndicator = ({ status }: { status: VerificationStatus }) => {
     const { t } = useTranslation();
+    const { getStatusStyle } = useStatusStyles();
+
     switch (status) {
         case 'checking':
-            return <span className="verification-status status-checking"><Icon path={ICONS.LOADING_SPINNER} className="icon-spinner" /> {t('checking')}</span>;
+            const checkingStyle = getStatusStyle('Checking');
+            return <span className="verification-status"><Badge text={t('checking')} type={checkingStyle.type} iconPath={checkingStyle.iconPath} /></span>;
         case 'verified':
-            return <span className="verification-status status-verified"><Icon path={ICONS.CHECK} className="icon-success" /> {t('verified')}</span>;
+            const verifiedStyle = getStatusStyle('Verified');
+            return <span className="verification-status"><Badge text={t('verified')} type={verifiedStyle.type} iconPath={verifiedStyle.iconPath} /></span>;
         case 'failed':
-            return <span className="verification-status status-failed"><Icon path={ICONS.X_CIRCLE} className="icon-danger" /> {t('notVerified')}</span>;
+             const failedStyle = getStatusStyle('Failed');
+            return <span className="verification-status"><Badge text={t('notVerified')} type={failedStyle.type} iconPath={failedStyle.iconPath} /></span>;
         default:
             return null;
     }
@@ -126,6 +132,7 @@ const DomainsView = ({ apiKey }: { apiKey: string }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
     const [domainToDelete, setDomainToDelete] = useState<string | null>(null);
+    const { getStatusStyle } = useStatusStyles();
 
     const { data, loading, error } = useApiV4('/domains', apiKey, {}, refetchIndex);
     const refetch = () => {
@@ -217,6 +224,8 @@ const DomainsView = ({ apiKey }: { apiKey: string }) => {
                              const domainName = domain.Domain || domain.domain;
                              if (!domainName) return null;
                              
+                             const getVerificationStyle = (isVerified: boolean) => isVerified ? getStatusStyle('Verified') : getStatusStyle('Missing');
+                             
                              const isSpfVerified = String(domain.Spf || domain.spf).toLowerCase() === 'true';
                              const isDkimVerified = String(domain.Dkim || domain.dkim).toLowerCase() === 'true';
                              const isMxVerified = String(domain.MX || domain.mx).toLowerCase() === 'true';
@@ -230,10 +239,10 @@ const DomainsView = ({ apiKey }: { apiKey: string }) => {
                                     <td><strong>{domainName}</strong></td>
                                     <td>
                                         <div className="domain-status-pills">
-                                            <Badge text="SPF" type={isSpfVerified ? 'success' : 'warning'} />
-                                            <Badge text="DKIM" type={isDkimVerified ? 'success' : 'warning'} />
-                                            <Badge text="Tracking" type={isTrackingVerified ? 'success' : 'warning'} />
-                                            <Badge text="MX" type={isMxVerified ? 'success' : 'warning'} />
+                                            <Badge text="SPF" type={getVerificationStyle(isSpfVerified).type} />
+                                            <Badge text="DKIM" type={getVerificationStyle(isDkimVerified).type} />
+                                            <Badge text="Tracking" type={getVerificationStyle(isTrackingVerified).type} />
+                                            <Badge text="MX" type={getVerificationStyle(isMxVerified).type} />
                                         </div>
                                     </td>
                                     <td>

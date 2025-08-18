@@ -150,12 +150,11 @@ const AuthView = () => {
                         <button type="button" className="link-button" onClick={() => setMode('login')}>{t('backToSignIn')}</button>
                     )}
                 </div>
-
-                <div className="auth-language-switcher">
-                    <button onClick={() => i18n.changeLanguage('en')} className={i18n.language.startsWith('en') ? 'active' : ''}>EN</button>
-                    <span>/</span>
-                    <button onClick={() => i18n.changeLanguage('fa')} className={i18n.language.startsWith('fa') ? 'active' : ''}>FA</button>
-                </div>
+            </div>
+            <div className="auth-language-switcher">
+                <button onClick={() => i18n.changeLanguage('en')} className={i18n.language.startsWith('en') ? 'active' : ''}>EN</button>
+                <span>/</span>
+                <button onClick={() => i18n.changeLanguage('fa')} className={i18n.language.startsWith('fa') ? 'active' : ''}>FA</button>
             </div>
         </div>
     );

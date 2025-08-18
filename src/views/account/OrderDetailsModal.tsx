@@ -5,25 +5,18 @@ import { formatDateForDisplay } from '../../utils/helpers';
 import Badge from '../../components/Badge';
 import Icon, { ICONS } from '../../components/Icon';
 import { useOrderStatuses } from '../../hooks/useOrderStatuses';
+import { useStatusStyles } from '../../hooks/useStatusStyles';
 
 const OrderDetailsModal = ({ isOpen, onClose, order }: { isOpen: boolean, onClose: () => void, order: any }) => {
     const { t, i18n } = useTranslation();
     const { statusesMap, loading: statusesLoading } = useOrderStatuses();
+    const { getStatusStyle } = useStatusStyles();
 
-    const getStatusBadgeType = (status: string) => {
-        switch (status) {
-            case 'completed': return 'success';
-            case 'pending': return 'warning';
-            case 'failed': return 'danger';
-            default: return 'default';
-        }
-    };
-    
     const getPaymentStatusBadge = (status: string) => {
         const numStatus = Number(status);
-        if (numStatus === 2) return 'success';
-        if (numStatus < 0) return 'danger';
-        return 'warning';
+        if (numStatus === 2) return getStatusStyle('Success');
+        if (numStatus < 0) return getStatusStyle('Failed');
+        return getStatusStyle('Pending');
     };
 
     const showPayButton = ['pending', 'failed'].includes(order.order_status);
@@ -48,7 +41,10 @@ const OrderDetailsModal = ({ isOpen, onClose, order }: { isOpen: boolean, onClos
                                 {statusInfo ? (
                                     <Badge text={statusInfo.text} color={statusInfo.color} iconPath={statusInfo.iconPath} />
                                 ) : (
-                                    <Badge text={orderStatus} type={getStatusBadgeType(orderStatus)} />
+                                    (() => {
+                                        const fallbackStyle = getStatusStyle(orderStatus);
+                                        return <Badge text={fallbackStyle.text} type={fallbackStyle.type} iconPath={fallbackStyle.iconPath} />;
+                                    })()
                                 )}
                             </td>
                         </tr>
@@ -68,15 +64,18 @@ const OrderDetailsModal = ({ isOpen, onClose, order }: { isOpen: boolean, onClos
                     </thead>
                     <tbody>
                         {order.transactions && order.transactions.length > 0 ? (
-                            order.transactions.map((tx: any) => (
-                                <tr key={tx.id}>
-                                    <td>{tx.trackid}</td>
-                                    <td>
-                                        <Badge text={tx.payment_status || 'N/A'} type={getPaymentStatusBadge(tx.payment_status)} />
-                                    </td>
-                                    <td>{tx.transaction_message}</td>
-                                </tr>
-                            ))
+                            order.transactions.map((tx: any) => {
+                                const statusStyle = getPaymentStatusBadge(tx.payment_status);
+                                return (
+                                    <tr key={tx.id}>
+                                        <td>{tx.trackid}</td>
+                                        <td>
+                                            <Badge text={tx.payment_status || 'N/A'} type={statusStyle.type} iconPath={statusStyle.iconPath} />
+                                        </td>
+                                        <td>{tx.transaction_message}</td>
+                                    </tr>
+                                );
+                            })
                         ) : (
                             <tr>
                                 <td colSpan={3} style={{ textAlign: 'center', padding: '1.5rem' }}>{t('noTransactionsFound')}</td>
