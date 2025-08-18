@@ -19,16 +19,15 @@ const FileGridCardSelect = ({ fileInfo, apiKey, onSelect }: { fileInfo: FileInfo
     const downloadUrl = `${ELASTIC_EMAIL_API_V4_BASE}/files/${encodeURIComponent(fileInfo.FileName)}?apiKey=${apiKey}`;
 
     return (
-        <div className="card file-grid-card" onClick={() => onSelect(fileInfo)}>
-            <div className="file-grid-card-preview">
-                <img src={downloadUrl} alt={fileInfo.FileName} className="file-grid-card-thumbnail" loading="lazy" />
+        <button className="file-grid-card-select" onClick={() => onSelect(fileInfo)}>
+            <img src={downloadUrl} alt={fileInfo.FileName} className="file-grid-card-select-thumbnail" loading="lazy" />
+            <div className="file-grid-card-select-overlay">
+                <div className="file-grid-card-select-info">
+                    <h4 className="file-grid-card-select-name" title={fileInfo.FileName}>{fileInfo.FileName}</h4>
+                    <p className="file-grid-card-select-meta">{formatBytes(fileInfo.Size)}</p>
+                </div>
             </div>
-            <div className="file-grid-card-overlay"></div>
-            <div className="file-grid-card-info">
-                <h4 className="file-grid-card-name" title={fileInfo.FileName}>{fileInfo.FileName}</h4>
-                <p className="file-grid-card-meta">{formatBytes(fileInfo.Size)}</p>
-            </div>
-        </div>
+        </button>
     );
 };
 
@@ -36,15 +35,15 @@ const FileListCardSelect = ({ fileInfo, apiKey, onSelect }: { fileInfo: FileInfo
     const downloadUrl = `${ELASTIC_EMAIL_API_V4_BASE}/files/${encodeURIComponent(fileInfo.FileName)}?apiKey=${apiKey}`;
 
     return (
-        <div className="card file-card clickable" onClick={() => onSelect(fileInfo)} style={{padding: '0.75rem'}}>
-            <div className="file-card-icon-wrapper" style={{width: 40, height: 40}}>
+        <button className="card file-card file-list-card-select" onClick={() => onSelect(fileInfo)}>
+            <div className="file-card-icon-wrapper">
                  <img src={downloadUrl} alt={fileInfo.FileName} className="file-card-thumbnail" loading="lazy" />
             </div>
             <div className="file-card-info">
                 <h4 className="file-card-name" title={fileInfo.FileName}>{fileInfo.FileName}</h4>
                 <p className="file-card-meta">{formatDateForDisplay(fileInfo.DateAdded)}</p>
             </div>
-        </div>
+        </button>
     );
 };
 

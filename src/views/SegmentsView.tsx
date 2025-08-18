@@ -173,9 +173,6 @@ const SegmentsView = ({ apiKey }: { apiKey: string }) => {
                              <p>{t('rule')}:</p>
                              <div className="segment-rule">{seg.Rule}</div>
                         </div>
-                         <div className="segment-card-footer">
-                            <span>{t('totalContacts')}: {(seg.ContactsCount || 0).toLocaleString(i18n.language)}</span>
-                         </div>
                     </div>
                 ))}
             </div>

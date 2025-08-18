@@ -2119,6 +2119,7 @@ html[data-theme='dark'] .credit-slider {
     justify-content: center;
     background: var(--subtle-background);
     border: 1px solid var(--border-color);
+    cursor: pointer;
 }
 .file-card-thumbnail {
     width: 100%;
@@ -2140,6 +2141,7 @@ html[data-theme='dark'] .credit-slider {
 .file-card-info {
     flex-grow: 1;
     overflow: hidden;
+    cursor: pointer;
 }
 .file-card-name {
     font-size: 1rem;
@@ -2961,19 +2963,85 @@ html[data-theme='dark'] .credit-slider {
 .media-manager-modal-content .file-container-view {
     flex-grow: 1;
     overflow-y: auto;
-    align-content: start;
     padding: 0.25rem;
 }
 
 .media-manager-modal-content .file-grid-view {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
 }
-
-.media-manager-modal-content .file-list-view .file-card {
+.file-list-card-select {
+    width: 100%;
+    padding: 0.75rem;
     cursor: pointer;
+    border: 1px solid var(--border-color);
 }
-.media-manager-modal-content .file-list-view .file-card:hover {
+.file-list-card-select:hover, .file-list-card-select:focus {
     border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(var(--info-color), 0.2);
+    outline: none;
+}
+.file-list-card-select .file-card-icon-wrapper {
+    width: 40px;
+    height: 40px;
+}
+
+/* New stylish grid card for media modal */
+.file-grid-card-select {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--subtle-background);
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    text-align: left;
+}
+.file-grid-card-select:hover, .file-grid-card-select:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(var(--info-color), 0.2);
+    outline: none;
+}
+.file-grid-card-select-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease-out;
+}
+.file-grid-card-select:hover .file-grid-card-select-thumbnail {
+    transform: scale(1.05);
+}
+.file-grid-card-select-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+}
+.file-grid-card-select-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+.file-grid-card-select-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 0 0.1rem 0;
+    color: white;
+}
+.file-grid-card-select-meta {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin: 0;
+    color: white;
 }
 
 .media-manager-modal-content .pagination-controls {
@@ -3212,24 +3280,55 @@ html[data-theme='dark'] .slider-control input[type="range"] {
     cursor: pointer;
 }
 
-/* Padding Control */
-.padding-control-grid {
+/* Modern Padding Control */
+.modern-padding-control {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem 1rem;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto 1fr auto;
+    width: 120px;
+    height: 100px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    position: relative;
+    background-color: var(--subtle-background);
 }
+.modern-padding-control input[type="number"] {
+    background: transparent;
+    border: none;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    color: var(--text-color);
+    -moz-appearance: textfield;
+}
+.modern-padding-control input::-webkit-outer-spin-button,
+.modern-padding-control input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.modern-padding-control .padding-input-top { grid-area: 1 / 1 / 2 / 4; height: 30px;}
+.modern-padding-control .padding-input-right { grid-area: 2 / 3 / 3 / 4; }
+.modern-padding-control .padding-input-bottom { grid-area: 3 / 1 / 4 / 4; height: 30px;}
+.modern-padding-control .padding-input-left { grid-area: 2 / 1 / 3 / 2; }
 
-.padding-control-grid .slider-control {
-    gap: 0.5rem;
-}
-.padding-control-grid .slider-control .icon {
+.modern-padding-control .padding-link-btn {
+    grid-area: 2 / 2 / 3 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    border-radius: 4px;
+    cursor: pointer;
     color: var(--subtle-text-color);
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 32px;
+    height: 32px;
 }
-.padding-control-grid .slider-control .control-value {
-    min-width: 40px;
-    text-align: right;
+.modern-padding-control .padding-link-btn.active {
+    background: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
 }
 
 /* Panel specific inputs */

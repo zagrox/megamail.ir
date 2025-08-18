@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Icon, { ICONS } from '../Icon';
 import CenteredMessage from '../CenteredMessage';
@@ -57,20 +57,72 @@ const Slider = ({ label, value, onChange, min = 0, max = 100, step = 1 }: { labe
     </div>
 );
 
-const PaddingSlider = ({ icon, label, value, onChange, min = 0, max = 100, step = 1 }: { icon?: string, label: string, value: number, onChange: (val: number) => void, min?: number, max?: number, step?: number }) => (
-    <div className="slider-control">
-        {icon && <Icon path={icon} />}
-        <input
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={value}
-            onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        />
-        <span className="control-value">{value}px</span>
-    </div>
-);
+const ModernPaddingControl = ({ style, onStyleChange }: { style: any, onStyleChange: (key: string, value: any) => void }) => {
+    const { paddingTop, paddingRight, paddingBottom, paddingLeft } = style;
+    const allEqual = paddingTop === paddingRight && paddingTop === paddingBottom && paddingTop === paddingLeft;
+    const [isLinked, setIsLinked] = useState(allEqual);
+
+    useEffect(() => {
+        const { paddingTop, paddingRight, paddingBottom, paddingLeft } = style;
+        const allEqual = paddingTop === paddingRight && paddingTop === paddingBottom && paddingTop === paddingLeft;
+        setIsLinked(allEqual);
+    }, [style]);
+
+    const handleChange = (side: string, value: string) => {
+        const numValue = value.replace(/[^0-9]/g, '');
+        if (isLinked) {
+            onStyleChange('paddingTop', `${numValue}px`);
+            onStyleChange('paddingRight', `${numValue}px`);
+            onStyleChange('paddingBottom', `${numValue}px`);
+            onStyleChange('paddingLeft', `${numValue}px`);
+        } else {
+            onStyleChange(side, `${numValue}px`);
+        }
+    };
+
+    const linkedValue = getPixelValue(paddingTop);
+
+    return (
+        <div className="modern-padding-control">
+            <input
+                type="number"
+                className="padding-input-top"
+                aria-label="Top padding"
+                value={isLinked ? linkedValue : getPixelValue(paddingTop)}
+                onChange={(e) => handleChange('paddingTop', e.target.value)}
+            />
+            <input
+                type="number"
+                className="padding-input-right"
+                aria-label="Right padding"
+                value={isLinked ? linkedValue : getPixelValue(paddingRight)}
+                onChange={(e) => handleChange('paddingRight', e.target.value)}
+            />
+            <input
+                type="number"
+                className="padding-input-bottom"
+                aria-label="Bottom padding"
+                value={isLinked ? linkedValue : getPixelValue(paddingBottom)}
+                onChange={(e) => handleChange('paddingBottom', e.target.value)}
+            />
+            <input
+                type="number"
+                className="padding-input-left"
+                aria-label="Left padding"
+                value={isLinked ? linkedValue : getPixelValue(paddingLeft)}
+                onChange={(e) => handleChange('paddingLeft', e.target.value)}
+            />
+            <button
+                type="button"
+                className={`padding-link-btn ${isLinked ? 'active' : ''}`}
+                onClick={() => setIsLinked(!isLinked)}
+                aria-label="Link padding values"
+            >
+                <Icon path={ICONS.LINK} />
+            </button>
+        </div>
+    );
+};
 
 const SegmentedControl = ({ options, value, onChange, isIconOnly = false }: { options: { value: string, label?: string, icon?: string }[], value: string, onChange: (val: string) => void, isIconOnly?: boolean }) => (
     <div className={`segmented-control ${isIconOnly ? 'icon-only' : ''}`}>
@@ -247,13 +299,10 @@ const HeaderSettings = ({ block, onStyleChange, onContentChange }: { block: any,
                 </LabeledControl>
             </Section>
 
-            <Section title={t('padding')}>
-                <div className="padding-control-grid">
-                    <PaddingSlider label={t('top')} value={getPixelValue(s.paddingTop)} onChange={val => handleStyleChange('paddingTop', `${val}px`)} />
-                    <PaddingSlider label={t('bottom')} value={getPixelValue(s.paddingBottom)} onChange={val => handleStyleChange('paddingBottom', `${val}px`)} />
-                    <PaddingSlider label={t('left')} value={getPixelValue(s.paddingLeft)} onChange={val => handleStyleChange('paddingLeft', `${val}px`)} />
-                    <PaddingSlider label={t('right')} value={getPixelValue(s.paddingRight)} onChange={val => handleStyleChange('paddingRight', `${val}px`)} />
-                </div>
+            <Section title="">
+                <LabeledControl label={t('padding')}>
+                    <ModernPaddingControl style={s} onStyleChange={handleStyleChange} />
+                </LabeledControl>
             </Section>
         </>
     );
@@ -341,13 +390,10 @@ const ImageSettings = ({ block, onStyleChange, onContentChange, onOpenMediaManag
                 <Slider label={t('borderRadius')} value={getPixelValue(s.borderRadius)} onChange={(val) => handleStyleChange('borderRadius', `${val}px`)} max={50} />
             </Section>
 
-            <Section title={t('padding')}>
-                <div className="padding-control-grid">
-                    <PaddingSlider label={t('top')} value={getPixelValue(s.paddingTop)} onChange={val => handleStyleChange('paddingTop', `${val}px`)} />
-                    <PaddingSlider label={t('bottom')} value={getPixelValue(s.paddingBottom)} onChange={val => handleStyleChange('paddingBottom', `${val}px`)} />
-                    <PaddingSlider label={t('left')} value={getPixelValue(s.paddingLeft)} onChange={val => handleStyleChange('paddingLeft', `${val}px`)} />
-                    <PaddingSlider label={t('right')} value={getPixelValue(s.paddingRight)} onChange={val => handleStyleChange('paddingRight', `${val}px`)} />
-                </div>
+            <Section title="">
+                <LabeledControl label={t('padding')}>
+                    <ModernPaddingControl style={s} onStyleChange={handleStyleChange} />
+                </LabeledControl>
             </Section>
         </>
     );
@@ -416,11 +462,12 @@ const ButtonSettings = ({ block, onStyleChange, onContentChange }: { block: any,
                     <SegmentedControl
                         value={alignmentValue}
                         onChange={handleAlignmentChange}
+                        isIconOnly
                         options={[
                             { value: 'left', label: t('alignLeft'), icon: ICONS.ALIGN_LEFT },
                             { value: 'center', label: t('alignCenter'), icon: ICONS.ALIGN_CENTER },
                             { value: 'right', label: t('alignRight'), icon: ICONS.ALIGN_RIGHT },
-                            { value: 'full', label: t('full') },
+                            { value: 'full', label: t('full'), icon: ICONS.SPACER },
                         ]}
                     />
                 </LabeledControl>
@@ -535,13 +582,10 @@ const TextSettings = ({ block, onStyleChange, onContentChange }: { block: any, o
                     />
                 </LabeledControl>
             </Section>
-            <Section title={t('padding')}>
-                <div className="padding-control-grid">
-                    <PaddingSlider label={t('top')} value={getPixelValue(s.paddingTop)} onChange={val => handleStyleChange('paddingTop', `${val}px`)} />
-                    <PaddingSlider label={t('bottom')} value={getPixelValue(s.paddingBottom)} onChange={val => handleStyleChange('paddingBottom', `${val}px`)} />
-                    <PaddingSlider label={t('left')} value={getPixelValue(s.paddingLeft)} onChange={val => handleStyleChange('paddingLeft', `${val}px`)} />
-                    <PaddingSlider label={t('right')} value={getPixelValue(s.paddingRight)} onChange={val => handleStyleChange('paddingRight', `${val}px`)} />
-                </div>
+            <Section title="">
+                <LabeledControl label={t('padding')}>
+                    <ModernPaddingControl style={s} onStyleChange={handleStyleChange} />
+                </LabeledControl>
             </Section>
         </>
     );
@@ -570,13 +614,10 @@ const ColumnsSettings = ({ block, onStyleChange }: { block: any, onStyleChange: 
                 </LabeledControl>
                 <Slider label={t('gap')} value={getPixelValue(s.gap)} onChange={(val) => handleStyleChange('gap', val)} max={50} />
             </Section>
-            <Section title={t('padding')}>
-                <div className="padding-control-grid">
-                     <PaddingSlider label={t('top')} value={getPixelValue(s.paddingTop)} onChange={val => handleStyleChange('paddingTop', `${val}px`)} />
-                    <PaddingSlider label={t('bottom')} value={getPixelValue(s.paddingBottom)} onChange={val => handleStyleChange('paddingBottom', `${val}px`)} />
-                    <PaddingSlider label={t('left')} value={getPixelValue(s.paddingLeft)} onChange={val => handleStyleChange('paddingLeft', `${val}px`)} />
-                    <PaddingSlider label={t('right')} value={getPixelValue(s.paddingRight)} onChange={val => handleStyleChange('paddingRight', `${val}px`)} />
-                </div>
+            <Section title="">
+                <LabeledControl label={t('padding')}>
+                    <ModernPaddingControl style={s} onStyleChange={handleStyleChange} />
+                </LabeledControl>
             </Section>
         </>
     );

@@ -106,7 +106,7 @@ const FileCard = React.memo(({ fileInfo, apiKey, onView, onDelete }: { fileInfo:
                     </div>
                 )}
             </div>
-            <div className="file-card-info">
+            <div className="file-card-info" onClick={() => onView(fileInfo)}>
                 <h4 className="file-card-name" title={fileInfo.FileName}>{fileInfo.FileName}</h4>
                 <p className="file-card-meta">{formatBytes(fileInfo.Size)} &bull; {formatDateForDisplay(fileInfo.DateAdded)}</p>
             </div>
@@ -141,12 +141,12 @@ const FileGridCard = React.memo(({ fileInfo, apiKey, onView, onDelete }: { fileI
                     </div>
                 )}
             </div>
-            <div className="file-grid-card-overlay" onClick={(e) => e.stopPropagation()}>
+            <div className="file-grid-card-overlay">
                 <div className="file-grid-card-actions">
-                    <a href={downloadUrl} target="_blank" rel="noopener noreferrer" className="btn-icon" aria-label={t('downloadFile')}>
+                    <a href={downloadUrl} target="_blank" rel="noopener noreferrer" className="btn-icon" aria-label={t('downloadFile')} onClick={(e) => e.stopPropagation()}>
                         <Icon path={ICONS.DOWNLOAD} />
                     </a>
-                    <button className="btn-icon btn-icon-danger" onClick={() => onDelete(fileInfo.FileName)} aria-label={t('deleteFile')}>
+                    <button className="btn-icon btn-icon-danger" onClick={(e) => { e.stopPropagation(); onDelete(fileInfo.FileName); }} aria-label={t('deleteFile')}>
                         <Icon path={ICONS.DELETE} />
                     </button>
                 </div>
