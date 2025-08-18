@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -40,7 +42,7 @@ const styleObjectToString = (style: React.CSSProperties | undefined): string => 
     return Object.entries(style)
         .map(([key, value]) => {
             if (value === undefined || value === null || value === '') return '';
-            const kebabKey = key.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
+            const kebabKey = key.replace(/([a-z09]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
             
             if (kebabKey === 'padding-y') {
                 const pxVal = typeof value === 'number' ? `${value}px` : value;
@@ -220,6 +222,7 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
     const [subject, setSubject] = useState('');
     const [fromName, setFromName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isTestSendVisible, setIsTestSendVisible] = useState(false);
     
     const [settingsView, setSettingsView] = useState<'block' | 'global' | null>(null);
     
@@ -827,30 +830,6 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
                                     />
                                 </div>
                             </div>
-                            <div className="form-group">
-                                <div className="input-with-icon">
-                                    <Icon path={ICONS.MAIL} />
-                                    <input
-                                        type="text"
-                                        placeholder={t('subject')}
-                                        value={subject}
-                                        onChange={(e) => setSubject(e.target.value)}
-                                        aria-label={t('subject')}
-                                    />
-                                </div>
-                            </div>
-                            <div className="form-group">
-                                <div className="input-with-icon">
-                                    <Icon path={ICONS.ACCOUNT} />
-                                    <input
-                                        type="text"
-                                        placeholder={t('fromName')}
-                                        value={fromName}
-                                        onChange={(e) => setFromName(e.target.value)}
-                                        aria-label={t('fromName')}
-                                    />
-                                </div>
-                            </div>
                         </div>
                     </div>
                      <div className="header-actions">
@@ -863,12 +842,50 @@ const EmailBuilderView = ({ apiKey, user }: { apiKey: string, user: any }) => {
                             <button className="btn-icon" onClick={handleExportJson} title={t('exportJson')}><Icon path={ICONS.FILE_TEXT} /></button>
                         </div>
                         <div className="header-main-actions">
-                             <button className="btn-icon-primary-save" onClick={handleSaveTemplate} disabled={isSaving} title={t('saveChanges')}>
-                                {isSaving ? <Loader /> : <Icon path={ICONS.SAVE_CHANGES} />}
+                             <button className="btn-icon" onClick={() => setIsTestSendVisible(prev => !prev)} title={t('sendEmail')}>
+                                <Icon path={ICONS.SEND_EMAIL} />
+                            </button>
+                            <button className="btn btn-primary" onClick={handleSaveTemplate} disabled={isSaving} title={t('saveChanges')}>
+                                {isSaving ? <Loader /> : <><Icon path={ICONS.SAVE_CHANGES} /><span>{t('saveTemplate')}</span></>}
                             </button>
                         </div>
                     </div>
                 </header>
+
+                <div className={`email-builder-test-panel ${isTestSendVisible ? 'visible' : ''}`}>
+                    <div className="form-group">
+                        <div className="input-with-icon">
+                            <Icon path={ICONS.MAIL} />
+                            <input
+                                type="text"
+                                placeholder={t('subject')}
+                                value={subject}
+                                onChange={(e) => setSubject(e.target.value)}
+                                aria-label={t('subject')}
+                            />
+                        </div>
+                    </div>
+                    <div className="email-builder-test-panel-row">
+                        <div className="form-group">
+                            <div className="input-with-icon">
+                                <Icon path={ICONS.ACCOUNT} />
+                                <input
+                                    type="text"
+                                    placeholder={t('fromName')}
+                                    value={fromName}
+                                    onChange={(e) => setFromName(e.target.value)}
+                                    aria-label={t('fromName')}
+                                />
+                            </div>
+                        </div>
+                        <button className="btn btn-secondary">
+                            <Icon path={ICONS.SEND_EMAIL} />
+                            <span>{t('sendEmail')}</span>
+                        </button>
+                    </div>
+                </div>
+
+
                 <div className="email-builder-container">
                     <Toolbar onAddComponent={handleAddComponentFromToolbar} />
                     <div ref={canvasWrapperRef} className="builder-canvas-wrapper" style={{backgroundColor: globalStyles.backdropColor}}>

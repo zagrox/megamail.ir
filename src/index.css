@@ -2384,18 +2384,26 @@ html[data-theme='dark'] .credit-slider {
     flex-direction: column;
     height: 100%;
 }
+
 .email-builder-header {
-    flex-shrink: 0;
+    display: flex;
     flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
     padding-bottom: 1rem;
     margin-bottom: 1rem;
 }
+
 .email-builder-header-left {
     display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
     flex-grow: 1;
-    margin-right: 1.5rem;
+    align-items: center;
 }
+
 .email-builder-main-inputs {
     display: flex;
     flex-grow: 1;
@@ -2405,22 +2413,68 @@ html[data-theme='dark'] .credit-slider {
     overflow: hidden;
     align-items: center;
 }
+
 .email-builder-main-inputs .form-group {
     margin: 0;
+    flex: 1.5;
+}
+
+.email-builder-test-panel {
+    display: none;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.email-builder-test-panel.visible {
+    display: flex;
+    flex-direction: column;
+}
+.email-builder-test-panel .form-group {
+    margin: 0;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.email-builder-test-panel-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+.email-builder-test-panel-row .form-group {
     flex: 1;
-    border-right: 1px solid var(--border-color);
 }
-[dir="rtl"] .email-builder-main-inputs .form-group {
-    border-right: none;
-    border-left: 1px solid var(--border-color);
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
 }
-.email-builder-main-inputs .form-group:last-child {
-    border-right: none;
-    border-left: none;
+
+.header-tool-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
 }
-.email-builder-main-inputs .template-name-group {
-    flex: 1.5; /* Template name is longer */
+
+.header-main-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
+
+.header-main-actions .btn-primary {
+    padding: 0.75rem;
+}
+.header-main-actions .btn-primary span {
+    display: none;
+}
+
+
 .input-with-icon {
     position: relative;
     display: flex;
@@ -2442,7 +2496,7 @@ html[data-theme='dark'] .credit-slider {
     right: 0.75rem;
 }
 .input-with-icon input {
-    padding-left: 2.75rem !important; /* !important to override generic input styles */
+    padding-left: 2.75rem !important;
     font-size: 1rem !important;
     border: none !important;
     background: transparent !important;
@@ -2457,10 +2511,6 @@ html[data-theme='dark'] .credit-slider {
     padding-right: 2.75rem !important;
 }
 
-.email-builder-header .header-actions {
-    width: 100%;
-    justify-content: space-between;
-}
 .email-builder-container {
     display: flex;
     flex-direction: column;
@@ -2582,14 +2632,16 @@ html[data-theme='dark'] .credit-slider {
 @media (min-width: 1024px) {
     .email-builder-header {
         flex-wrap: nowrap;
-        padding-bottom: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-    .email-builder-header .header-actions {
-        width: auto;
+        align-items: center;
     }
     .email-builder-header-left {
-      flex-direction: row;
+        flex-wrap: nowrap;
+    }
+    .header-main-actions .btn-primary {
+        padding: 0.75rem 1.25rem;
+    }
+    .header-main-actions .btn-primary span {
+        display: inline;
     }
 
     .email-builder-container {
@@ -2628,23 +2680,17 @@ html[data-theme='dark'] .credit-slider {
         padding: 1rem 0.5rem;
     }
 }
-@media (max-width: 1024px) {
-    .email-builder-main-inputs {
+
+@media (max-width: 768px) {
+    .email-builder-header {
         flex-direction: column;
-        width: 100%;
+        align-items: stretch;
     }
-    .email-builder-main-inputs .form-group {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-    }
-     .email-builder-main-inputs .form-group:last-child {
-        border-bottom: none;
-    }
-}
-@media (max-width: 600px) {
     .email-builder-header-left {
-        margin-right: 0;
+        width: 100%;
+    }
+    .header-actions {
+        justify-content: space-between;
         width: 100%;
     }
 }
