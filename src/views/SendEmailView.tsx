@@ -42,6 +42,29 @@ const CampaignTypeSelection = ({ onSelect }: { onSelect: (type: CampaignType) =>
     );
 };
 
+const AccordionItem = ({ 
+    id, 
+    title, 
+    children, 
+    openAccordion, 
+    setOpenAccordion 
+}: { 
+    id: AccordionSection, 
+    title: string, 
+    children: React.ReactNode,
+    openAccordion: AccordionSection,
+    setOpenAccordion: (id: AccordionSection) => void
+}) => (
+    <div className="accordion-item">
+        <div className={`accordion-header ${openAccordion === id ? 'open' : ''}`} onClick={() => setOpenAccordion(openAccordion === id ? '' : id)}>
+            <h3>{title}</h3>
+            <Icon path={ICONS.CHEVRON_DOWN} className={`accordion-icon ${openAccordion === id ? 'open' : ''}`} />
+        </div>
+        {openAccordion === id && <div className="accordion-content">{children}</div>}
+    </div>
+);
+
+
 const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: string, data?: any) => void; }) => {
     const { t } = useTranslation();
     const { addToast } = useToast();
@@ -184,12 +207,17 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
 
     const handleSubmit = async (action: 'send' | 'draft' | 'schedule') => {
         setIsSending(true);
-
+    
         let payload: any = { ...campaign };
-        if (action === 'send') payload.Status = 'Active';
-        else if (action === 'schedule' && campaign.Options.ScheduleFor) payload.Status = 'Active';
-        else payload.Status = 'Draft';
-
+    
+        if (action === 'send') {
+            payload.Status = 'Active';
+        } else if (action === 'schedule' && campaign.Options.ScheduleFor) {
+            payload.Status = 'Active';
+        } else {
+            payload.Status = 'Draft';
+        }
+    
         if (contentMethod === 'plainText') {
              payload.Content = payload.Content.map((c: any) => ({...c, Body: { Content: c.Body?.Content || '', ContentType: 'PlainText', Charset: 'utf-8' }, TemplateName: c.TemplateName || null }));
         } else {
@@ -202,14 +230,34 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                 return rest;
             });
         }
-        
+    
+        let finalRecipients: any;
         if (recipientTarget === 'all') {
-            payload.Recipients = {};
+            finalRecipients = {};
+        } else if (recipientTarget === 'list') {
+            finalRecipients = { ListNames: campaign.Recipients.ListNames || [] };
+        } else { // segment
+            finalRecipients = { SegmentNames: campaign.Recipients.SegmentNames || [] };
         }
-
+    
+        const hasActualRecipients = 
+            recipientTarget === 'all' ||
+            (finalRecipients.ListNames && finalRecipients.ListNames.length > 0) ||
+            (finalRecipients.SegmentNames && finalRecipients.SegmentNames.length > 0);
+    
+        if (action === 'draft' && !hasActualRecipients) {
+            payload.Recipients = {};
+        } else {
+            payload.Recipients = finalRecipients;
+        }
+    
         try {
             await apiFetchV4('/campaigns', apiKey, { method: 'POST', body: payload });
-            addToast(t('emailSentSuccess'), 'success');
+            if (payload.Status === 'Draft') {
+                addToast(t('draftSavedSuccess'), 'success');
+            } else {
+                addToast(t('emailSentSuccess'), 'success');
+            }
         } catch (err: any) {
             addToast(t('emailSentError', { error: err.message }), 'error');
         } finally {
@@ -226,16 +274,6 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
     const fromParts = (currentContent.From || '@').split('@');
     const fromNamePart = fromParts[0];
     const fromDomainPart = fromParts[1] || (verifiedDomains.length > 0 ? verifiedDomains[0] : '');
-    
-    const AccordionItem = ({ id, title, children }: { id: AccordionSection, title: string, children: React.ReactNode}) => (
-        <div className="accordion-item">
-            <div className={`accordion-header ${openAccordion === id ? 'open' : ''}`} onClick={() => setOpenAccordion(openAccordion === id ? '' : id)}>
-                <h3>{title}</h3>
-                <Icon path={ICONS.CHEVRON_DOWN} className={`accordion-icon ${openAccordion === id ? 'open' : ''}`} />
-            </div>
-            {openAccordion === id && <div className="accordion-content">{children}</div>}
-        </div>
-    );
     
     if (step === 'selection') {
         return <CampaignTypeSelection onSelect={handleCampaignTypeSelect} />;
@@ -280,7 +318,12 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                 {t('createCampaign')}
             </h2>
             <div className="accordion">
-                <AccordionItem id="recipients" title={`1. ${t('recipients')}`}>
+                <AccordionItem 
+                    id="recipients" 
+                    title={`1. ${t('recipients')}`}
+                    openAccordion={openAccordion}
+                    setOpenAccordion={setOpenAccordion}
+                >
                     <div className="form-group recipient-target-selector">
                         <label className="custom-radio"><input type="radio" name="rt" value="all" checked={recipientTarget === 'all'} onChange={() => setRecipientTarget('all')} /><span className="radio-checkmark"></span><span className="radio-label">{t('allContacts')}</span></label>
                         <label className="custom-radio"><input type="radio" name="rt" value="list" checked={recipientTarget === 'list'} onChange={() => setRecipientTarget('list')} /><span className="radio-checkmark"></span><span className="radio-label">{t('aList')}</span></label>
@@ -298,7 +341,12 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                     )}
                 </AccordionItem>
 
-                <AccordionItem id="content" title={`2. ${t('subject')} & ${t('content')}`}>
+                <AccordionItem 
+                    id="content" 
+                    title={`2. ${t('subject')} & ${t('content')}`}
+                    openAccordion={openAccordion}
+                    setOpenAccordion={setOpenAccordion}
+                >
                     {campaignType === 'ABTest' && (
                         <div className="content-variant-tabs">
                             <button type="button" className={`content-variant-tab ${activeContent === 0 ? 'active' : ''}`} onClick={() => setActiveContent(0)}>Content A</button>
@@ -336,7 +384,12 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                     {contentMethod === 'plainText' && <textarea value={currentContent.Body?.Content || ''} onChange={e => handleValueChange('Content', 'Body', { ...currentContent.Body, Content: e.target.value }, activeContent)} rows={10} />}
                 </AccordionItem>
 
-                <AccordionItem id="settings" title={`3. ${t('settingsAndTracking')}`}>
+                <AccordionItem 
+                    id="settings" 
+                    title={`3. ${t('settingsAndTracking')}`}
+                    openAccordion={openAccordion}
+                    setOpenAccordion={setOpenAccordion}
+                >
                     <div className="form-group">
                         <label>{t('campaignName')}</label>
                         <input
