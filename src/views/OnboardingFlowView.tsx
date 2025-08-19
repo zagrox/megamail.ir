@@ -57,17 +57,17 @@ const Step3 = ({ data, setData }: { data: any, setData: Function }) => {
             <h2>{t('profileTitle')}</h2>
             <p>{t('profileSubtitle')}</p>
             <form className="auth-form" style={{maxWidth: '400px', margin: '0 auto'}}>
-                <div className="form-group">
-                    <label htmlFor="company">{t('company')}</label>
-                    <input id="company" name="company" type="text" value={data.company} onChange={handleChange} />
+                <div className="input-group">
+                    <span className="input-icon"><Icon path={ICONS.CONTACTS} /></span>
+                    <input name="company" type="text" placeholder={t('company')} value={data.company} onChange={handleChange} />
                 </div>
-                <div className="form-group">
-                    <label htmlFor="website">{t('website')}</label>
-                    <input id="website" name="website" type="url" value={data.website} onChange={handleChange} />
+                <div className="input-group">
+                    <span className="input-icon"><Icon path={ICONS.DOMAINS} /></span>
+                    <input name="website" type="url" placeholder={t('website')} value={data.website} onChange={handleChange} />
                 </div>
-                 <div className="form-group">
-                    <label htmlFor="mobile">{t('mobile')}</label>
-                    <input id="mobile" name="mobile" type="tel" value={data.mobile} onChange={handleChange} />
+                 <div className="input-group">
+                    <span className="input-icon"><Icon path={ICONS.MOBILE} /></span>
+                    <input name="mobile" type="tel" placeholder={t('mobile')} value={data.mobile} onChange={handleChange} />
                 </div>
             </form>
         </div>

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import useApiV4 from '../hooks/useApiV4';
@@ -193,7 +194,7 @@ const CampaignsView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                     />
                 </div>
                 <div className="header-actions">
-                    <button className="btn btn-primary" onClick={() => setView('Email Builder')}>
+                    <button className="btn btn-primary" onClick={() => setView('Send Email')}>
                         <Icon path={ICONS.PLUS} /> {t('createCampaign')}
                     </button>
                 </div>

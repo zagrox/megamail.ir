@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
@@ -18,6 +19,7 @@ import EmailListView from './views/EmailListView';
 import SegmentsView from './views/SegmentsView';
 import MediaManagerView from './views/MediaManagerView';
 import EmailBuilderView from './views/EmailBuilderView';
+import SendEmailView from './views/SendEmailView';
 import CampaignsView from './views/CampaignsView';
 import TemplatesView from './views/TemplatesView';
 import DomainsView from './views/DomainsView';
@@ -195,7 +197,8 @@ const App = () => {
         'Media Manager': { component: <MediaManagerView apiKey={apiKey} />, title: t('mediaManager'), icon: ICONS.FOLDER },
         'Campaigns': { component: <CampaignsView apiKey={apiKey} setView={handleSetView} />, title: t('campaigns'), icon: ICONS.CAMPAIGNS },
         'Templates': { component: <TemplatesView apiKey={apiKey} setView={handleSetView} />, title: t('templates'), icon: ICONS.ARCHIVE },
-        'Email Builder': { component: <EmailBuilderView apiKey={apiKey} user={user} templateToEdit={templateToEdit} />, title: t('emailBuilder'), icon: ICONS.SEND_EMAIL },
+        'Email Builder': { component: <EmailBuilderView apiKey={apiKey} user={user} templateToEdit={templateToEdit} />, title: t('emailBuilder'), icon: ICONS.PENCIL },
+        'Send Email': { component: <SendEmailView apiKey={apiKey} setView={handleSetView} />, title: t('sendEmail'), icon: ICONS.SEND_EMAIL },
         'Domains': { component: <DomainsView apiKey={apiKey} />, title: t('domains'), icon: ICONS.DOMAINS },
         'SMTP': { component: <SmtpView apiKey={apiKey} user={user}/>, title: t('smtp'), icon: ICONS.SMTP }
     };
@@ -209,7 +212,8 @@ const App = () => {
         { name: t('mediaManager'), view: 'Media Manager', icon: ICONS.FOLDER },
         { name: t('campaigns'), view: 'Campaigns', icon: ICONS.CAMPAIGNS },
         { name: t('templates'), view: 'Templates', icon: ICONS.ARCHIVE },
-        { name: t('emailBuilder'), view: 'Email Builder', icon: ICONS.SEND_EMAIL },
+        { name: t('sendEmail'), view: 'Send Email', icon: ICONS.SEND_EMAIL },
+        { name: t('emailBuilder'), view: 'Email Builder', icon: ICONS.PENCIL },
     ];
     
     const SidebarContent = () => (
@@ -240,7 +244,7 @@ const App = () => {
     );
     
     const currentView = views[view];
-    const showHeader = view !== 'Dashboard' && view !== 'Email Builder' && view !== 'Account';
+    const showHeader = view !== 'Dashboard' && view !== 'Email Builder' && view !== 'Account' && view !== 'Send Email';
 
     return (
         <div ref={appContainerRef} className={`app-container ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
@@ -258,7 +262,7 @@ const App = () => {
                         <Icon path={ICONS.ACCOUNT} />
                     </button>
                 </header>
-                <main className="content">
+                <main className={`content ${view === 'Email Builder' ? 'content--no-padding' : ''}`}>
                     {showHeader && (
                         <header className="content-header">
                             <h2>{currentView?.title}</h2>

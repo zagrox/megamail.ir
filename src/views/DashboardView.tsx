@@ -1,5 +1,6 @@
 
 
+
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -21,12 +22,13 @@ const DashboardView = ({ setView, apiKey, user, isEmbed = false }: { setView: (v
     const navItems = useMemo(() => [
         { name: t('statistics'), icon: ICONS.STATISTICS, desc: t('statisticsDesc'), view: 'Statistics' },
         { name: t('contacts'), icon: ICONS.CONTACTS, desc: t('contactsDesc'), view: 'Contacts' },
+        { name: t('sendEmail'), icon: ICONS.SEND_EMAIL, desc: t('sendEmailDesc'), view: 'Send Email' },
         { name: t('emailLists'), icon: ICONS.EMAIL_LISTS, desc: t('emailListsDesc'), view: 'Email Lists' },
         { name: t('segments'), icon: ICONS.SEGMENTS, desc: t('segmentsDesc'), view: 'Segments' },
         { name: t('mediaManager'), icon: ICONS.FOLDER, desc: t('mediaManagerDesc'), view: 'Media Manager' },
         { name: t('campaigns'), icon: ICONS.CAMPAIGNS, desc: t('campaignsDesc'), view: 'Campaigns' },
         { name: t('templates'), icon: ICONS.ARCHIVE, desc: t('templatesDesc'), view: 'Templates' },
-        { name: t('emailBuilder'), icon: ICONS.SEND_EMAIL, desc: t('emailBuilderDesc'), view: 'Email Builder' },
+        { name: t('emailBuilder'), icon: ICONS.PENCIL, desc: t('emailBuilderDesc'), view: 'Email Builder' },
         { name: t('domains'), icon: ICONS.DOMAINS, desc: t('domainsDesc'), view: 'Domains' },
         { name: t('smtp'), icon: ICONS.SMTP, desc: t('smtpDesc'), view: 'SMTP' },
     ], [t]);
@@ -49,7 +51,7 @@ const DashboardView = ({ setView, apiKey, user, isEmbed = false }: { setView: (v
                             <Icon path={ICONS.BUY_CREDITS} />
                             {accountLoading ? t('loadingCredits') : `${t('credits')}: ${Number(accountData?.emailcredits ?? 0).toLocaleString(i18n.language)}`}
                         </button>
-                        <button className="btn btn-primary" onClick={() => setView('Email Builder')}><Icon path={ICONS.SEND_EMAIL} /> {t('createTemplate')}</button>
+                        <button className="btn btn-primary" onClick={() => setView('Send Email')}><Icon path={ICONS.SEND_EMAIL} /> {t('createCampaign')}</button>
                     </div>
                 </div>
             )}

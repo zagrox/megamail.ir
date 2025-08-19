@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { apiUploadV4 } from '../../api/elasticEmail';
+import { apiFetchV4 } from '../../api/elasticEmail';
 import { FileInfo } from '../../api/types';
 import Modal from '../Modal';
 import Loader from '../Loader';
+
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+        const result = reader.result as string;
+        // The result is 'data:mime/type;base64,the-base64-string'. Strip the prefix.
+        const base64String = result.split(',')[1];
+        resolve(base64String);
+    };
+    reader.onerror = error => reject(error);
+});
+
 
 const FileUploadModal = ({ isOpen, onClose, apiKey, onSuccess, onError }: { isOpen: boolean; onClose: () => void; apiKey: string; onSuccess: (fileInfo: FileInfo) => void; onError: (msg: string) => void; }) => {
     const { t } = useTranslation();
@@ -32,14 +45,25 @@ const FileUploadModal = ({ isOpen, onClose, apiKey, onSuccess, onError }: { isOp
         if (!file) return;
 
         setIsUploading(true);
-        const formData = new FormData();
-        formData.append('file', file);
-        if (expiresAfterDays) {
-            formData.append('expiresAfterDays', expiresAfterDays);
-        }
-
         try {
-            const fileInfo = await apiUploadV4('/files', apiKey, formData);
+            const base64Content = await toBase64(file);
+
+            const payload = {
+                BinaryContent: base64Content,
+                Name: file.name,
+                ContentType: file.type
+            };
+            
+            const params: Record<string, string> = {};
+            if (expiresAfterDays) {
+                params.expiresAfterDays = expiresAfterDays;
+            }
+
+            const fileInfo = await apiFetchV4('/files', apiKey, {
+                method: 'POST',
+                body: payload,
+                params
+            });
             onSuccess(fileInfo);
         } catch (err: any) {
             onError(err.message);

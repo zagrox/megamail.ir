@@ -15,6 +15,8 @@ const AuthView = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
     const { t, i18n } = useTranslation();
     const { addToast } = useToast();
 
@@ -25,9 +27,7 @@ const AuthView = () => {
 
         try {
             if (mode === 'login') {
-                const email = (form.elements.namedItem('email') as HTMLInputElement).value;
-                const password = (form.elements.namedItem('password') as HTMLInputElement).value;
-                await login({ email, password });
+                await login({ email: loginEmail, password: loginPassword });
             } else if (mode === 'register') {
                 const email = (form.elements.namedItem('email') as HTMLInputElement).value;
                 const password = (form.elements.namedItem('password') as HTMLInputElement).value;
@@ -40,6 +40,8 @@ const AuthView = () => {
                 }
                 await register({ email, password, first_name, last_name });
                 addToast(t('registrationSuccessMessage'), 'success');
+                setLoginEmail(email);
+                setLoginPassword('');
                 setMode('login');
             } else if (mode === 'forgot') {
                 const email = (form.elements.namedItem('email') as HTMLInputElement).value;
@@ -77,11 +79,25 @@ const AuthView = () => {
                          <>
                             <div className="input-group">
                                 <span className="input-icon"><Icon path={ICONS.MAIL} /></span>
-                                <input name="email" type="email" placeholder={t('emailAddress')} required />
+                                <input 
+                                    name="email" 
+                                    type="email" 
+                                    placeholder={t('emailAddress')} 
+                                    required
+                                    value={loginEmail}
+                                    onChange={(e) => setLoginEmail(e.target.value)}
+                                />
                             </div>
                             <div className="input-group has-btn">
                                 <span className="input-icon"><Icon path={ICONS.LOCK} /></span>
-                                <input name="password" type={showPassword ? "text" : "password"} placeholder={t('password')} required />
+                                <input 
+                                    name="password" 
+                                    type={showPassword ? "text" : "password"} 
+                                    placeholder={t('password')} 
+                                    required 
+                                    value={loginPassword}
+                                    onChange={(e) => setLoginPassword(e.target.value)}
+                                />
                                 <button type="button" className="input-icon-btn" onClick={() => setShowPassword(!showPassword)}>
                                     <Icon path={showPassword ? ICONS.EYE_OFF : ICONS.EYE} />
                                 </button>
