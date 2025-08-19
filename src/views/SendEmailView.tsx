@@ -8,6 +8,7 @@ import Loader from '../components/Loader';
 import Icon, { ICONS } from '../components/Icon';
 import CenteredMessage from '../components/CenteredMessage';
 import Modal from '../components/Modal';
+import MultiSelectSearch from '../components/MultiSelectSearch';
 
 type CampaignType = 'Normal' | 'ABTest';
 type RecipientTarget = 'list' | 'segment' | 'all';
@@ -16,31 +17,6 @@ type ContentMethod = 'template' | 'plainText';
 type AccordionSection = 'recipients' | 'content' | 'settings' | '';
 
 const emptyContent = { From: '', ReplyTo: '', Subject: '', TemplateName: '', Preheader: '' };
-
-const CampaignTypeSelection = ({ onSelect }: { onSelect: (type: CampaignType) => void }) => {
-    const { t } = useTranslation();
-    return (
-        <div>
-            <h2 className="content-header" style={{textAlign: 'center', marginBottom: '2rem'}}>
-                {t('createCampaign')}
-            </h2>
-            <div className="campaign-type-selection-container">
-                <div className="campaign-type-option">
-                    <Icon path={ICONS.MAIL} />
-                    <h3>Regular</h3>
-                    <p>Create and send a single template to your recipients.</p>
-                    <button className="btn btn-primary" onClick={() => onSelect('Normal')}>Create</button>
-                </div>
-                <div className="campaign-type-option">
-                    <Icon path={ICONS.COLUMNS} />
-                    <h3>A/B test</h3>
-                    <p>Send a few variants of templates to see which one will perform better.</p>
-                    <button className="btn btn-primary" onClick={() => onSelect('ABTest')}>Create</button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 const AccordionItem = ({ 
     id, 
@@ -68,9 +44,6 @@ const AccordionItem = ({
 const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: string, data?: any) => void; }) => {
     const { t } = useTranslation();
     const { addToast } = useToast();
-
-    const [step, setStep] = useState<CreationStep>('form');
-    const [campaignType, setCampaignType] = useState<CampaignType>('Normal');
     
     const [isSending, setIsSending] = useState(false);
     const [activeContent, setActiveContent] = useState(0);
@@ -108,6 +81,9 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
             templateTypes: 'RawHTML',
         }
     );
+    
+    const listItems = useMemo(() => (Array.isArray(lists) ? lists : []).map((l: List) => ({ id: l.ListName, name: l.ListName })), [lists]);
+    const segmentItems = useMemo(() => (Array.isArray(segments) ? segments : []).map((s: Segment) => ({ id: s.Name, name: s.Name })), [segments]);
 
     const verifiedDomains = useMemo(() => (Array.isArray(domains) ? domains : [])
         .filter(d => String(d.Spf).toLowerCase() === 'true' && String(d.Dkim).toLowerCase() === 'true')
@@ -142,17 +118,6 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
         }
     }, [isOptimizationOn]);
 
-    const handleCampaignTypeSelect = (type: CampaignType) => {
-        setCampaignType(type);
-        setCampaign(c => {
-            const newContent = (type === 'Normal' || c.Content.length === 0)
-                ? [c.Content[0] || JSON.parse(JSON.stringify(emptyContent))]
-                : [c.Content[0], c.Content[1] || { ...c.Content[0], Subject: `${c.Content[0].Subject} B` }];
-            return { ...c, Content: newContent };
-        });
-        setStep('form');
-    };
-
     const handleValueChange = (section: 'Campaign' | 'Content' | 'Options', key: string, value: any, contentIndex: number = activeContent) => {
         setCampaign(prev => {
             if (section === 'Campaign') {
@@ -186,22 +151,17 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
         });
     };
     
-    const handleMultiRecipientChange = (name: string, type: 'ListNames' | 'SegmentNames') => {
+    const handleSelectionChange = (selectedNames: string[], type: 'ListNames' | 'SegmentNames') => {
         setCampaign(prev => {
-            const currentNames = prev.Recipients[type] || [];
-            const newNames = currentNames.includes(name)
-                ? currentNames.filter((n: string) => n !== name)
-                : [...currentNames, name];
             const otherType = type === 'ListNames' ? 'SegmentNames' : 'ListNames';
-            
             return {
                 ...prev,
                 Recipients: {
                     ...prev.Recipients,
                     [otherType]: [],
-                    [type]: newNames,
-                },
-            };
+                    [type]: selectedNames,
+                }
+            }
         });
     };
 
@@ -269,18 +229,18 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
         handleValueChange('Content', 'TemplateName', templateName, activeContent);
         setIsTemplateModalOpen(false);
     };
+
+    const handleGoToDomains = () => {
+        sessionStorage.setItem('account-tab', 'domains');
+        setView('Account');
+    };
     
     const currentContent = campaign.Content[activeContent] || {};
     const fromParts = (currentContent.From || '@').split('@');
     const fromNamePart = fromParts[0];
     const fromDomainPart = fromParts[1] || (verifiedDomains.length > 0 ? verifiedDomains[0] : '');
     
-    if (step === 'selection') {
-        return <CampaignTypeSelection onSelect={handleCampaignTypeSelect} />;
-    }
-
     if (domainsLoading) return <CenteredMessage><Loader /></CenteredMessage>;
-    if (verifiedDomains.length === 0) return <CenteredMessage><div className="info-message warning"><strong>{t('noVerifiedDomains')}</strong></div></CenteredMessage>;
     
     return (
         <div className="campaign-form-container">
@@ -330,13 +290,25 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                         <label className="custom-radio"><input type="radio" name="rt" value="segment" checked={recipientTarget === 'segment'} onChange={() => setRecipientTarget('segment')} /><span className="radio-checkmark"></span><span className="radio-label">{t('aSegment')}</span></label>
                     </div>
                     {recipientTarget === 'list' && (
-                        <div className="recipient-checkbox-list">
-                            {listsLoading ? <Loader/> : lists?.map((l: List) => <label key={l.ListName} className="custom-checkbox"><input type="checkbox" checked={campaign.Recipients.ListNames.includes(l.ListName)} onChange={() => handleMultiRecipientChange(l.ListName, 'ListNames')} /><span className="checkbox-checkmark"></span><span className="checkbox-label">{l.ListName}</span></label>)}
+                        <div style={{marginTop: '1.5rem'}}>
+                            <MultiSelectSearch
+                                items={listItems}
+                                selectedItems={campaign.Recipients.ListNames}
+                                onSelectionChange={(selected) => handleSelectionChange(selected, 'ListNames')}
+                                placeholder={t('chooseList')}
+                                loading={listsLoading}
+                            />
                         </div>
                     )}
                      {recipientTarget === 'segment' && (
-                        <div className="recipient-checkbox-list">
-                            {segmentsLoading ? <Loader/> : segments?.map((s: Segment) => <label key={s.Name} className="custom-checkbox"><input type="checkbox" checked={campaign.Recipients.SegmentNames.includes(s.Name)} onChange={() => handleMultiRecipientChange(s.Name, 'SegmentNames')} /><span className="checkbox-checkmark"></span><span className="checkbox-label">{s.Name}</span></label>)}
+                        <div style={{marginTop: '1.5rem'}}>
+                            <MultiSelectSearch
+                                items={segmentItems}
+                                selectedItems={campaign.Recipients.SegmentNames}
+                                onSelectionChange={(selected) => handleSelectionChange(selected, 'SegmentNames')}
+                                placeholder={t('chooseSegment')}
+                                loading={segmentsLoading}
+                            />
                         </div>
                     )}
                 </AccordionItem>
@@ -347,7 +319,7 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                     openAccordion={openAccordion}
                     setOpenAccordion={setOpenAccordion}
                 >
-                    {campaignType === 'ABTest' && (
+                    {campaign.Content.length > 1 && (
                         <div className="content-variant-tabs">
                             <button type="button" className={`content-variant-tab ${activeContent === 0 ? 'active' : ''}`} onClick={() => setActiveContent(0)}>Content A</button>
                             <button type="button" className={`content-variant-tab ${activeContent === 1 ? 'active' : ''}`} onClick={() => setActiveContent(1)}>Content B</button>
@@ -355,15 +327,35 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                     )}
                     <div className="form-grid">
                         <div className="form-group"><label>{t('fromName')}</label><input type="text" value={currentContent.FromName} onChange={e => handleValueChange('Content', 'FromName', e.target.value)} /></div>
-                        <div className="form-group"><label>{t('fromEmail')}</label><div className="from-email-composer"><input type="text" value={fromNamePart} onChange={e => handleValueChange('Content', 'From', `${e.target.value}@${fromDomainPart}`)} /><span className="from-email-at">@</span><select value={fromDomainPart} onChange={e => handleValueChange('Content', 'From', `${fromNamePart}@${e.target.value}`)}>{verifiedDomains.map(d => <option key={d} value={d}>{d}</option>)}</select></div></div>
+                        <div className="form-group">
+                            <label>{t('fromEmail')}</label>
+                            {verifiedDomains.length > 0 ? (
+                                <div className="from-email-composer">
+                                    <input type="text" value={fromNamePart} onChange={e => handleValueChange('Content', 'From', `${e.target.value}@${fromDomainPart}`)} />
+                                    <span className="from-email-at">@</span>
+                                    <select value={fromDomainPart} onChange={e => handleValueChange('Content', 'From', `${fromNamePart}@${e.target.value}`)}>
+                                        {verifiedDomains.map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                            ) : (
+                                <div className="info-message warning" style={{width: '100%', margin: 0}}>
+                                    <p style={{margin: 0}}>
+                                        {t('noVerifiedDomainsToSendError')}{' '}
+                                        <button type="button" className="link-button" onClick={handleGoToDomains}>
+                                            {t('addDomainNow')}
+                                        </button>
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div className="form-group"><label>{t('subject')}</label><input type="text" value={currentContent.Subject} onChange={e => handleValueChange('Content', 'Subject', e.target.value)} required /></div>
-                    <div className="form-group"><label>Preheader</label><input type="text" value={currentContent.Preheader} onChange={e => handleValueChange('Content', 'Preheader', e.target.value)} /></div>
+                    <div className="form-group"><label>{t('preheader')}</label><input type="text" value={currentContent.Preheader} onChange={e => handleValueChange('Content', 'Preheader', e.target.value)} /></div>
                     
                     <h4>{t('content')}</h4>
                     <div className="content-method-tabs">
-                        <button type="button" className={`content-method-tab ${contentMethod === 'template' ? 'active' : ''}`} onClick={() => setContentMethod('template')}><Icon path={ICONS.ARCHIVE} /> Templates</button>
-                        <button type="button" className={`content-method-tab ${contentMethod === 'plainText' ? 'active' : ''}`} onClick={() => setContentMethod('plainText')}><Icon path={ICONS.TYPE} /> Plain Text</button>
+                        <button type="button" className={`content-method-tab ${contentMethod === 'template' ? 'active' : ''}`} onClick={() => setContentMethod('template')}><Icon path={ICONS.ARCHIVE} /> {t('templates')}</button>
+                        <button type="button" className={`content-method-tab ${contentMethod === 'plainText' ? 'active' : ''}`} onClick={() => setContentMethod('plainText')}><Icon path={ICONS.TYPE} /> {t('plainText')}</button>
                     </div>
 
                     {contentMethod === 'template' && (
@@ -451,14 +443,14 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                 <button type="button" className="btn" onClick={() => handleSubmit('draft')} disabled={isSending}>{t('saveAsDraft')}</button>
                 {!isScheduling ? (
                     <div style={{display: 'flex', gap: '1rem'}}>
-                         <button type="button" className="btn btn-secondary" onClick={() => setIsScheduling(true)} disabled={isSending}>{t('schedule')}</button>
-                         <button type="button" className="btn btn-primary" onClick={() => handleSubmit('send')} disabled={isSending}>{isSending ? <Loader/> : t('sendNow')}</button>
+                         <button type="button" className="btn btn-secondary" onClick={() => setIsScheduling(true)} disabled={isSending || verifiedDomains.length === 0}>{t('schedule')}</button>
+                         <button type="button" className="btn btn-primary" onClick={() => handleSubmit('send')} disabled={isSending || verifiedDomains.length === 0}>{isSending ? <Loader/> : t('sendNow')}</button>
                     </div>
                 ) : (
                     <div className="schedule-controls">
                         <input type="datetime-local" value={campaign.Options.ScheduleFor?.slice(0, 16) || ''} onChange={e => handleValueChange('Options', 'ScheduleFor', e.target.value ? new Date(e.target.value).toISOString() : null)} />
                         <button type="button" className="btn" onClick={() => setIsScheduling(false)} disabled={isSending}>{t('cancel')}</button>
-                        <button type="button" className="btn btn-primary" onClick={() => handleSubmit('schedule')} disabled={isSending || !campaign.Options.ScheduleFor}>{isSending ? <Loader/> : t('confirm')}</button>
+                        <button type="button" className="btn btn-primary" onClick={() => handleSubmit('schedule')} disabled={isSending || !campaign.Options.ScheduleFor || verifiedDomains.length === 0}>{isSending ? <Loader/> : t('confirm')}</button>
                     </div>
                 )}
             </div>
