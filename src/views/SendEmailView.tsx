@@ -7,12 +7,13 @@ import { useToast } from '../contexts/ToastContext';
 import Loader from '../components/Loader';
 import Icon, { ICONS } from '../components/Icon';
 import CenteredMessage from '../components/CenteredMessage';
+import Modal from '../components/Modal';
 
 type CampaignType = 'Normal' | 'ABTest';
 type RecipientTarget = 'list' | 'segment' | 'all';
 type CreationStep = 'selection' | 'form';
-type ContentMethod = 'template' | 'builder' | 'plainText';
-type AccordionSection = 'recipients' | 'content' | 'settings';
+type ContentMethod = 'template' | 'plainText';
+type AccordionSection = 'recipients' | 'content' | 'settings' | '';
 
 const emptyContent = { From: '', ReplyTo: '', Subject: '', TemplateName: '', Preheader: '' };
 
@@ -26,7 +27,7 @@ const CampaignTypeSelection = ({ onSelect }: { onSelect: (type: CampaignType) =>
             <div className="campaign-type-selection-container">
                 <div className="campaign-type-option">
                     <Icon path={ICONS.MAIL} />
-                    <h3>{t('regular')}</h3>
+                    <h3>Regular</h3>
                     <p>Create and send a single template to your recipients.</p>
                     <button className="btn btn-primary" onClick={() => onSelect('Normal')}>Create</button>
                 </div>
@@ -41,11 +42,11 @@ const CampaignTypeSelection = ({ onSelect }: { onSelect: (type: CampaignType) =>
     );
 };
 
-const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: string) => void; }) => {
+const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: string, data?: any) => void; }) => {
     const { t } = useTranslation();
     const { addToast } = useToast();
 
-    const [step, setStep] = useState<CreationStep>('selection');
+    const [step, setStep] = useState<CreationStep>('form');
     const [campaignType, setCampaignType] = useState<CampaignType>('Normal');
     
     const [isSending, setIsSending] = useState(false);
@@ -55,22 +56,44 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
     const [openAccordion, setOpenAccordion] = useState<AccordionSection>('recipients');
     const [isOptimizationOn, setIsOptimizationOn] = useState(false);
     const [isScheduling, setIsScheduling] = useState(false);
+    const [isUtmEnabled, setIsUtmEnabled] = useState(false);
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+    const [templateSearchTerm, setTemplateSearchTerm] = useState('');
 
     const [campaign, setCampaign] = useState({
         Name: '',
         Content: [JSON.parse(JSON.stringify(emptyContent))],
         Recipients: { ListNames: [], SegmentNames: [] },
-        Options: { TrackOpens: true, TrackClicks: true, ScheduleFor: null, DeliveryOptimization: 'None' }
+        Options: { 
+            TrackOpens: true, 
+            TrackClicks: true, 
+            ScheduleFor: null, 
+            DeliveryOptimization: 'None',
+            EnableSendTimeOptimization: false
+        }
     });
     
     const { data: lists, loading: listsLoading } = useApiV4('/lists', apiKey, { limit: 1000 });
     const { data: segments, loading: segmentsLoading } = useApiV4('/segments', apiKey, {});
     const { data: domains, loading: domainsLoading } = useApiV4('/domains', apiKey, {});
-    const { data: templates, loading: templatesLoading } = useApiV4('/templates', apiKey, { limit: 1000, templateTypes: 'RawHTML' });
+    const { data: templates, loading: templatesLoading } = useApiV4(
+        '/templates',
+        apiKey,
+        {
+            limit: 1000,
+            scopeType: 'Personal',
+            templateTypes: 'RawHTML',
+        }
+    );
 
     const verifiedDomains = useMemo(() => (Array.isArray(domains) ? domains : [])
         .filter(d => String(d.Spf).toLowerCase() === 'true' && String(d.Dkim).toLowerCase() === 'true')
         .map(d => d.Domain), [domains]);
+        
+    const filteredTemplates = useMemo(() => {
+        if (!Array.isArray(templates)) return [];
+        return templates.filter((t: Template) => t.Name.toLowerCase().includes(templateSearchTerm.toLowerCase()));
+    }, [templates, templateSearchTerm]);
 
     useEffect(() => {
         if (verifiedDomains.length > 0) {
@@ -84,11 +107,15 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
     
     useEffect(() => {
         if (isOptimizationOn) {
-            if (campaign.Options.DeliveryOptimization === 'None') {
-                setCampaign(c => ({...c, Options: {...c.Options, DeliveryOptimization: 'ToEngagedFirst'}}))
-            }
+            setCampaign(c => ({
+                ...c,
+                Options: { ...c.Options, DeliveryOptimization: 'ToEngagedFirst', EnableSendTimeOptimization: false }
+            }));
         } else {
-            setCampaign(c => ({...c, Options: {...c.Options, DeliveryOptimization: 'None'}}))
+            setCampaign(c => ({
+                ...c,
+                Options: { ...c.Options, DeliveryOptimization: 'None', EnableSendTimeOptimization: false }
+            }));
         }
     }, [isOptimizationOn]);
 
@@ -103,30 +130,38 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
         setStep('form');
     };
 
-    const handleValueChange = (section: 'Campaign' | 'Content' | 'Options' | 'Recipients', key: string, value: any, contentIndex: number = activeContent) => {
+    const handleValueChange = (section: 'Campaign' | 'Content' | 'Options', key: string, value: any, contentIndex: number = activeContent) => {
         setCampaign(prev => {
-            const newCampaign = { ...prev };
-            if (section === 'Content') {
-                const newContent = [...newCampaign.Content];
-                newContent[contentIndex] = { ...newContent[contentIndex], [key]: value };
-                newCampaign.Content = newContent;
-            } else if (section === 'Options') {
-                newCampaign.Options = { ...newCampaign.Options, [key]: value };
-            } else if (section === 'Campaign') {
-                (newCampaign as any)[key] = value;
+            if (section === 'Campaign') {
+                return { ...prev, [key]: value };
             }
-            return newCampaign;
+            if (section === 'Content') {
+                return {
+                    ...prev,
+                    Content: prev.Content.map((item, idx) => 
+                        idx === contentIndex ? { ...item, [key]: value } : item
+                    )
+                };
+            }
+            if (section === 'Options') {
+                return {
+                    ...prev,
+                    Options: { ...prev.Options, [key]: value }
+                };
+            }
+            return prev;
         });
     };
     
-    const handleUtmChange = (value: boolean) => {
-        handleValueChange('Content', 'Utm', value ? { Source: '', Medium: '', Campaign: '', Content: '' } : undefined);
+    const handleUtmFieldChange = (field: string, value: string, contentIndex: number) => {
+        setCampaign(prev => {
+            const newContent = [...prev.Content];
+            const currentContent = newContent[contentIndex];
+            const newUtm = { ...currentContent.Utm, [field]: value };
+            newContent[contentIndex] = { ...currentContent, Utm: newUtm };
+            return { ...prev, Content: newContent };
+        });
     };
-    
-    const handleUtmFieldChange = (field: string, value: string) => {
-        const newUtm = { ...campaign.Content[activeContent].Utm, [field]: value };
-        handleValueChange('Content', 'Utm', newUtm);
-    }
     
     const handleMultiRecipientChange = (name: string, type: 'ListNames' | 'SegmentNames') => {
         setCampaign(prev => {
@@ -156,9 +191,16 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
         else payload.Status = 'Draft';
 
         if (contentMethod === 'plainText') {
-             payload.Content = payload.Content.map((c: any) => ({...c, Body: { Content: c.Body?.Content || '', ContentType: 'PlainText', Charset: 'utf-8' }, TemplateName: null}));
+             payload.Content = payload.Content.map((c: any) => ({...c, Body: { Content: c.Body?.Content || '', ContentType: 'PlainText', Charset: 'utf-8' }, TemplateName: c.TemplateName || null }));
         } else {
              payload.Content = payload.Content.map((c: any) => ({...c, Body: null}));
+        }
+        
+        if (!isUtmEnabled) {
+             payload.Content = payload.Content.map((c: any) => {
+                const { Utm, ...rest } = c;
+                return rest;
+            });
         }
         
         if (recipientTarget === 'all') {
@@ -175,6 +217,11 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
         }
     };
     
+    const handleSelectTemplate = (templateName: string) => {
+        handleValueChange('Content', 'TemplateName', templateName, activeContent);
+        setIsTemplateModalOpen(false);
+    };
+    
     const currentContent = campaign.Content[activeContent] || {};
     const fromParts = (currentContent.From || '@').split('@');
     const fromNamePart = fromParts[0];
@@ -182,7 +229,7 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
     
     const AccordionItem = ({ id, title, children }: { id: AccordionSection, title: string, children: React.ReactNode}) => (
         <div className="accordion-item">
-            <div className={`accordion-header ${openAccordion === id ? 'open' : ''}`} onClick={() => setOpenAccordion(id)}>
+            <div className={`accordion-header ${openAccordion === id ? 'open' : ''}`} onClick={() => setOpenAccordion(openAccordion === id ? '' : id)}>
                 <h3>{title}</h3>
                 <Icon path={ICONS.CHEVRON_DOWN} className={`accordion-icon ${openAccordion === id ? 'open' : ''}`} />
             </div>
@@ -199,6 +246,36 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
     
     return (
         <div className="campaign-form-container">
+             <Modal isOpen={isTemplateModalOpen} onClose={() => setIsTemplateModalOpen(false)} title={t('templates')}>
+                <div className="template-selector-modal">
+                    <div className="search-bar" style={{marginBottom: '1rem'}}>
+                        <Icon path={ICONS.SEARCH} />
+                        <input
+                            type="search"
+                            placeholder={t('searchTemplatesPlaceholder')}
+                            value={templateSearchTerm}
+                            onChange={e => setTemplateSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="template-list-container">
+                        {templatesLoading ? <Loader /> : filteredTemplates.length > 0 ? (
+                            filteredTemplates.map((template: Template) => (
+                                <button
+                                    type="button"
+                                    key={template.Name}
+                                    className="template-list-item"
+                                    onClick={() => handleSelectTemplate(template.Name)}
+                                >
+                                    <span>{template.Name}</span>
+                                    <small>{template.Subject || t('noSubject')}</small>
+                                </button>
+                            ))
+                        ) : (
+                            <CenteredMessage>{t('noTemplatesForQuery', {query: templateSearchTerm})}</CenteredMessage>
+                        )}
+                    </div>
+                </div>
+            </Modal>
             <h2 className="content-header" style={{marginBottom: '2rem'}}>
                 {t('createCampaign')}
             </h2>
@@ -233,27 +310,63 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                         <div className="form-group"><label>{t('fromEmail')}</label><div className="from-email-composer"><input type="text" value={fromNamePart} onChange={e => handleValueChange('Content', 'From', `${e.target.value}@${fromDomainPart}`)} /><span className="from-email-at">@</span><select value={fromDomainPart} onChange={e => handleValueChange('Content', 'From', `${fromNamePart}@${e.target.value}`)}>{verifiedDomains.map(d => <option key={d} value={d}>{d}</option>)}</select></div></div>
                     </div>
                     <div className="form-group"><label>{t('subject')}</label><input type="text" value={currentContent.Subject} onChange={e => handleValueChange('Content', 'Subject', e.target.value)} required /></div>
-                    <div className="form-group"><label>{t('preheader')}</label><input type="text" value={currentContent.Preheader} onChange={e => handleValueChange('Content', 'Preheader', e.target.value)} /></div>
+                    <div className="form-group"><label>Preheader</label><input type="text" value={currentContent.Preheader} onChange={e => handleValueChange('Content', 'Preheader', e.target.value)} /></div>
                     
                     <h4>{t('content')}</h4>
                     <div className="content-method-tabs">
                         <button type="button" className={`content-method-tab ${contentMethod === 'template' ? 'active' : ''}`} onClick={() => setContentMethod('template')}><Icon path={ICONS.ARCHIVE} /> Templates</button>
-                        <button type="button" className={`content-method-tab ${contentMethod === 'builder' ? 'active' : ''}`} onClick={() => setView('Email Builder')}><Icon path={ICONS.PENCIL} /> Drag & drop editor</button>
                         <button type="button" className={`content-method-tab ${contentMethod === 'plainText' ? 'active' : ''}`} onClick={() => setContentMethod('plainText')}><Icon path={ICONS.TYPE} /> Plain Text</button>
                     </div>
 
-                    {contentMethod === 'template' && <select value={currentContent.TemplateName} onChange={e => handleValueChange('Content', 'TemplateName', e.target.value)} disabled={templatesLoading}><option value="">Select a template...</option>{templates?.map((t: Template) => <option key={t.Name} value={t.Name}>{t.Name}</option>)}</select>}
-                    {contentMethod === 'plainText' && <textarea value={currentContent.Body?.Content || ''} onChange={e => handleValueChange('Content', 'Body', { ...currentContent.Body, Content: e.target.value })} rows={10} />}
+                    {contentMethod === 'template' && (
+                        <div className="form-group">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+                                <input 
+                                    type="text" 
+                                    readOnly 
+                                    value={currentContent.TemplateName || ''} 
+                                    placeholder={t('noTemplatesFound')} 
+                                    onClick={() => setIsTemplateModalOpen(true)}
+                                    style={{cursor: 'pointer'}}
+                                />
+                                <button type="button" className="btn btn-secondary" onClick={() => setIsTemplateModalOpen(true)}>{t('useTemplate')}</button>
+                            </div>
+                        </div>
+                    )}
+                    {contentMethod === 'plainText' && <textarea value={currentContent.Body?.Content || ''} onChange={e => handleValueChange('Content', 'Body', { ...currentContent.Body, Content: e.target.value }, activeContent)} rows={10} />}
                 </AccordionItem>
 
-                <AccordionItem id="settings" title={`3. ${t('settings')} & ${t('tracking')}`}>
-                    <div className="form-group"><label>{t('campaignName')}</label><input type="text" value={campaign.Name} onChange={e => handleValueChange('Campaign', 'Name', e.target.value)} required /></div>
+                <AccordionItem id="settings" title={`3. ${t('settingsAndTracking')}`}>
+                    <div className="form-group">
+                        <label>{t('campaignName')}</label>
+                        <input
+                            type="text"
+                            value={campaign.Name}
+                            onChange={(e) => handleValueChange('Campaign', 'Name', e.target.value)}
+                            required
+                        />
+                    </div>
                     
                     <h4>{t('sending')}</h4>
                     <div className="form-group" style={{display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '1rem'}}><label htmlFor="opt-toggle" style={{marginBottom: 0}}>{t('sendTimeOptimization')}</label><label className="toggle-switch"><input type="checkbox" id="opt-toggle" checked={isOptimizationOn} onChange={e => setIsOptimizationOn(e.target.checked)} /><span className="toggle-slider"></span></label></div>
                     {isOptimizationOn && (
                         <div className="form-group" style={{paddingLeft: '1rem', borderLeft: '2px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-                            <label className="custom-radio"><input type="radio" name="dto" value="ToEngagedFirst" checked={campaign.Options.DeliveryOptimization === 'ToEngagedFirst'} onChange={() => handleValueChange('Options', 'DeliveryOptimization', 'ToEngagedFirst')} /><span className="radio-checkmark"></span><span className="radio-label">Send to the most engaged contacts first</span><p className="radio-description">Optimize your emails beginning with the most engaged contacts first. This may improve the delivery of your campaign.</p></label>
+                            <label className="custom-radio">
+                                <input type="radio" name="dto" value="ToEngagedFirst" 
+                                       checked={campaign.Options.DeliveryOptimization === 'ToEngagedFirst'} 
+                                       onChange={() => setCampaign(c => ({...c, Options: {...c.Options, DeliveryOptimization: 'ToEngagedFirst', EnableSendTimeOptimization: false}}))} />
+                                <span className="radio-checkmark"></span>
+                                <span className="radio-label">{t('sendToEngagedFirst')}</span>
+                                <p className="radio-description">{t('sendToEngagedFirstDesc')}</p>
+                            </label>
+                            <label className="custom-radio">
+                                <input type="radio" name="dto" value="OptimalTime"
+                                       checked={campaign.Options.EnableSendTimeOptimization === true}
+                                       onChange={() => setCampaign(c => ({...c, Options: {...c.Options, DeliveryOptimization: 'None', EnableSendTimeOptimization: true}}))} />
+                                <span className="radio-checkmark"></span>
+                                <span className="radio-label">{t('sendAtOptimalTime')}</span>
+                                <p className="radio-description">{t('sendAtOptimalTimeDesc')}</p>
+                            </label>
                         </div>
                     )}
 
@@ -261,16 +374,20 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                     <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <label className="custom-checkbox"><input type="checkbox" checked={campaign.Options.TrackOpens} onChange={e => handleValueChange('Options', 'TrackOpens', e.target.checked)} /><span className="checkbox-checkmark"></span><span className="checkbox-label">{t('trackOpens')}</span></label>
                         <label className="custom-checkbox"><input type="checkbox" checked={campaign.Options.TrackClicks} onChange={e => handleValueChange('Options', 'TrackClicks', e.target.checked)} /><span className="checkbox-checkmark"></span><span className="checkbox-label">{t('trackClicks')}</span></label>
-                        <label className="custom-checkbox"><input type="checkbox" checked={!!currentContent.Utm} onChange={e => handleUtmChange(e.target.checked)} /><span className="checkbox-checkmark"></span><span className="checkbox-label">{t('utmTracking')}</span></label>
+                        <label className="custom-checkbox">
+                            <input type="checkbox" checked={isUtmEnabled} onChange={e => setIsUtmEnabled(e.target.checked)} />
+                            <span className="checkbox-checkmark"></span>
+                            <span className="checkbox-label">{t('googleAnalytics')}</span>
+                        </label>
                     </div>
-                    {currentContent.Utm && (
+                    {isUtmEnabled && (
                         <div className="utm-fields-container">
-                            <p>{t('utmTrackingDesc')}</p>
+                            <p>{t('utmDescription')}</p>
                             <div className="form-grid">
-                                <div className="form-group"><label>{t('utm_source')}</label><input type="text" value={currentContent.Utm.Source} onChange={e => handleUtmFieldChange('Source', e.target.value)} /></div>
-                                <div className="form-group"><label>{t('utm_medium')}</label><input type="text" value={currentContent.Utm.Medium} onChange={e => handleUtmFieldChange('Medium', e.target.value)} /></div>
-                                <div className="form-group"><label>{t('utm_campaign')}</label><input type="text" value={currentContent.Utm.Campaign} onChange={e => handleUtmFieldChange('Campaign', e.target.value)} /></div>
-                                <div className="form-group"><label>{t('utm_content')}</label><input type="text" value={currentContent.Utm.Content} onChange={e => handleUtmFieldChange('Content', e.target.value)} /></div>
+                                <div className="form-group"><label>UTM_Source</label><input type="text" value={currentContent.Utm?.Source || ''} onChange={e => handleUtmFieldChange('Source', e.target.value, activeContent)} /></div>
+                                <div className="form-group"><label>UTM_Medium</label><input type="text" value={currentContent.Utm?.Medium || ''} onChange={e => handleUtmFieldChange('Medium', e.target.value, activeContent)} /></div>
+                                <div className="form-group"><label>UTM_Campaign</label><input type="text" value={currentContent.Utm?.Campaign || ''} onChange={e => handleUtmFieldChange('Campaign', e.target.value, activeContent)} /></div>
+                                <div className="form-group"><label>UTM_Content</label><input type="text" value={currentContent.Utm?.Content || ''} onChange={e => handleUtmFieldChange('Content', e.target.value, activeContent)} /></div>
                             </div>
                         </div>
                     )}
@@ -278,7 +395,7 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
             </div>
 
             <div className="campaign-form-footer">
-                <button type="button" className="btn" onClick={() => handleSubmit('draft')} disabled={isSending}>{t('saveChanges')}</button>
+                <button type="button" className="btn" onClick={() => handleSubmit('draft')} disabled={isSending}>{t('saveAsDraft')}</button>
                 {!isScheduling ? (
                     <div style={{display: 'flex', gap: '1rem'}}>
                          <button type="button" className="btn btn-secondary" onClick={() => setIsScheduling(true)} disabled={isSending}>{t('schedule')}</button>
