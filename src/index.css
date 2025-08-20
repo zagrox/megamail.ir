@@ -2649,6 +2649,7 @@ html[data-theme='dark'] .credit-slider {
 }
 .recipient-target-selector {
     display: flex;
+    flex-direction: row;
     gap: 2rem;
     flex-wrap: wrap;
     padding: 0.5rem 0;

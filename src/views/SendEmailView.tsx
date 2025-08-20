@@ -243,7 +243,7 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
     if (domainsLoading) return <CenteredMessage><Loader /></CenteredMessage>;
     
     return (
-        <div className="campaign-form-container">
+        <div>
              <Modal isOpen={isTemplateModalOpen} onClose={() => setIsTemplateModalOpen(false)} title={t('templates')}>
                 <div className="template-selector-modal">
                     <div className="search-bar" style={{marginBottom: '1rem'}}>
@@ -393,7 +393,7 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
                     </div>
                     
                     <h4>{t('sending')}</h4>
-                    <div className="form-group" style={{display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '1rem'}}><label htmlFor="opt-toggle" style={{marginBottom: 0}}>{t('sendTimeOptimization')}</label><label className="toggle-switch"><input type="checkbox" id="opt-toggle" checked={isOptimizationOn} onChange={e => setIsOptimizationOn(e.target.checked)} /><span className="toggle-slider"></span></label></div>
+                    <div className="form-group" style={{display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '1rem'}}><label className="toggle-switch"><input type="checkbox" id="opt-toggle" checked={isOptimizationOn} onChange={e => setIsOptimizationOn(e.target.checked)} /><span className="toggle-slider"></span></label><label htmlFor="opt-toggle" style={{marginBottom: 0}}>{t('sendTimeOptimization')}</label></div>
                     {isOptimizationOn && (
                         <div className="form-group" style={{paddingLeft: '1rem', borderLeft: '2px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem'}}>
                             <label className="custom-radio">
