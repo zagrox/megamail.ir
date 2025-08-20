@@ -1,3 +1,4 @@
+
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -55,6 +56,7 @@ const resources = {
       complaints: 'Complaints',
       bounced: 'Bounced',
       emailsSent: 'Emails Sent',
+      failed: 'Failed',
       theme: 'Theme',
       close: 'Close',
       // Auth
@@ -680,6 +682,13 @@ const resources = {
       noTransactionsFound: 'No transactions found for this order.',
       payNow: 'Pay Now',
       noResultsFound: 'No results found.',
+      // Media Manager Sort Options
+      sortRecentFirst: "Recent first",
+      sortOldestFirst: "Oldest first",
+      sortNameAZ: "Name (A-Z)",
+      sortNameZA: "Name (Z-A)",
+      sortSizeLargest: "Size (Largest)",
+      sortSizeSmallest: "Size (Smallest)",
     }
   },
   fa: {
@@ -1027,6 +1036,65 @@ const resources = {
       useTemplate: 'استفاده از قالب',
       noTemplatesFound: 'هیچ قالبی یافت نشد. اولین مورد خود را ایجاد کنید!',
       noResultsFound: 'نتیجه‌ای یافت نشد.',
+      // Added translations from screenshots
+      orders: 'سفارش‌ها',
+      // Email List View
+      searchListsPlaceholder: 'جستجوی لیست‌ها...',
+      newListNamePlaceholder: '...نام لیست جدید',
+      createList: 'ایجاد لیست',
+      // Segments View
+      searchSegmentsPlaceholder: 'جستجوی سگمنت‌ها...',
+      createSegment: 'ایجاد سگمنت',
+      // Campaigns View
+      searchCampaignsPlaceholder: 'جستجوی کمپین یا موضوع...',
+      // Templates View
+      searchTemplatesPlaceholder: 'جستجوی قالب‌ها...',
+      createTemplate: 'ایجاد قالب',
+      // Media Manager
+      uploadFile: 'آپلود',
+      sortRecentFirst: "جدیدترین",
+      sortOldestFirst: "قدیمی‌ترین",
+      sortNameAZ: "نام (الف-ی)",
+      sortNameZA: "نام (ی-الف)",
+      sortSizeLargest: "اندازه (بزرگترین)",
+      sortSizeSmallest: "اندازه (کوچکترین)",
+      
+      // --- Added translations for untranslated strings from screenshots ---
+      
+      // Import Contacts Modal
+      importContactsTitle: 'وارد کردن مخاطبین',
+      uploadCsvFile: 'آپلود فایل CSV',
+      clickToBrowse: 'برای انتخاب کلیک کنید',
+      orDragAndDrop: 'یا بکشید و رها کنید',
+      addToListOptional: 'افزودن به لیست (اختیاری)',
+      dontAddToList: 'به لیستی اضافه نشود',
+      startImport: 'شروع واردات',
+
+      // Create Segment Modal
+      createNewSegment: 'ایجاد سگمنت جدید',
+      segmentRuleSubRuleNotice: 'API از قوانین فرعی (مثلاً استفاده از پرانتز) پشتیبانی نمی‌کند. تمام قوانین با رابط انتخابی به هم متصل خواهند شد.',
+      segmentName: 'نام سگمنت',
+      match: 'مطابقت با',
+      allAnd: 'همه (و)',
+      ofTheFollowing: 'از قوانین زیر:',
+      segmentField_Email: 'ایمیل',
+      segmentOperator_CONTAINS: 'شامل است',
+      enterValue: '...مقدار را وارد کنید',
+      addAnotherRule: 'افزودن قانون دیگر',
+
+      // Upload File Modal
+      uploadModalTitle: 'آپلود فایل جدید',
+      file: 'فایل',
+      expiresAfterDays: 'انقضا پس از (روز)',
+      leaveEmptyNoExpiry: 'برای بدون انقضا خالی بگذارید',
+
+      // Email Builder
+      saveTemplate: 'ذخیره قالب',
+      dropContentHere: 'محتوا را اینجا رها کنید',
+
+      // Campaign View
+      viewCampaignStats: 'مشاهده آمار',
+      failed: 'ناموفق',
     }
   }
 };

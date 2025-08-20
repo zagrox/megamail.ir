@@ -237,14 +237,14 @@ const MediaManagerView = ({ apiKey }: { apiKey: string }) => {
         return { paginatedFiles: paginated, totalPages: total };
     }, [sortedAndFilteredFiles, currentPage, FILES_PER_PAGE]);
 
-    const sortOptions = {
-        "DateAdded-descending": "Recent first",
-        "DateAdded-ascending": "Oldest first",
-        "FileName-ascending": "Name (A-Z)",
-        "FileName-descending": "Name (Z-A)",
-        "Size-descending": "Size (Largest)",
-        "Size-ascending": "Size (Smallest)",
-    };
+    const sortOptions = useMemo(() => ({
+        "DateAdded-descending": t('sortRecentFirst'),
+        "DateAdded-ascending": t('sortOldestFirst'),
+        "FileName-ascending": t('sortNameAZ'),
+        "FileName-descending": t('sortNameZA'),
+        "Size-descending": t('sortSizeLargest'),
+        "Size-ascending": t('sortSizeSmallest'),
+    }), [t]);
 
     return (
         <div>
