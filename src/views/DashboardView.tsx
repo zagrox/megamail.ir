@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -41,19 +43,33 @@ const DashboardView = ({ setView, apiKey, user, isEmbed = false }: { setView: (v
     return (
         <div className="dashboard-container">
             {!isEmbed && (
-                <div className="dashboard-header">
-                    <div>
-                        <h2>{t('welcomeMessage', { name: welcomeName })}</h2>
-                        <p>{t('dashboardSubtitle')}</p>
+                <>
+                    <div className="dashboard-header">
+                        <div>
+                            <h2>{t('welcomeMessage', { name: welcomeName })}</h2>
+                        </div>
+                        <div className="dashboard-actions">
+                            <button className="btn btn-credits" onClick={() => setView('Buy Credits')}>
+                                <Icon path={ICONS.BUY_CREDITS} />
+                                {accountLoading ? t('loadingCredits') : `${t('credits')}: ${Number(accountData?.emailcredits ?? 0).toLocaleString(i18n.language)}`}
+                            </button>
+                        </div>
                     </div>
-                    <div className="dashboard-actions">
-                        <button className="btn btn-credits" onClick={() => setView('Buy Credits')}>
-                            <Icon path={ICONS.BUY_CREDITS} />
-                            {accountLoading ? t('loadingCredits') : `${t('credits')}: ${Number(accountData?.emailcredits ?? 0).toLocaleString(i18n.language)}`}
-                        </button>
-                        <button className="btn btn-primary" onClick={() => setView('Send Email')}><Icon path={ICONS.SEND_EMAIL} /> {t('createCampaign')}</button>
+                    <div className="cta-banner">
+                        <div className="cta-banner-icon">
+                            <Icon path={ICONS.CAMPAIGNS} />
+                        </div>
+                        <div className="cta-banner-text">
+                            <h3 className="cta-banner-title">{t('startEmailMarketingTitle')}</h3>
+                            <p className="cta-banner-desc">{t('startEmailMarketingDesc')}</p>
+                        </div>
+                        <div className="cta-banner-action">
+                            <button className="btn btn-primary" onClick={() => setView('Send Email')}>
+                                <Icon path={ICONS.SEND_EMAIL} /> {t('createCampaign')}
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </>
             )}
 
             <div className="dashboard-stats-grid">

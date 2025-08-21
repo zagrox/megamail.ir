@@ -2,8 +2,9 @@
 
 import React from 'react';
 
-const Icon = ({ path, className = '', style }: { path: string; className?: string; style?: React.CSSProperties }) => (
+const Icon = ({ path, className = '', style, title }: { path: string; className?: string; style?: React.CSSProperties; title?: string }) => (
   <svg className={`icon ${className}`} style={style} width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+    {title && <title>{title}</title>}
     <path d={path} />
   </svg>
 );

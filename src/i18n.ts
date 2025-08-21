@@ -1,4 +1,5 @@
 
+
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -117,6 +118,8 @@ const resources = {
       welcomeMessage: 'Welcome back, {{name}}!',
       user: 'User',
       dashboardSubtitle: 'Here is a quick overview of your account activity and tools.',
+      startEmailMarketingTitle: 'Start Email Marketing',
+      startEmailMarketingDesc: 'Launch your first campaign and engage your audience with our powerful and easy-to-use campaign builder.',
       credits: 'Credits',
       loadingCredits: 'Loading credits...',
       sendAnEmail: 'Send an Email',
@@ -803,6 +806,8 @@ const resources = {
       welcomeMessage: 'خوش آمدید، {{name}}!',
       user: 'کاربر',
       dashboardSubtitle: 'در اینجا یک نمای کلی از فعالیت حساب و ابزارهای شما وجود دارد.',
+      startEmailMarketingTitle: 'بازاریابی ایمیلی را شروع کنید',
+      startEmailMarketingDesc: 'اولین کمپین خود را راه اندازی کنید و با استفاده از سازنده کمپین قدرتمند و آسان ما، مخاطبان خود را درگیر کنید.',
       credits: 'اعتبار',
       loadingCredits: 'در حال بارگذاری اعتبار...',
       sendAnEmail: 'ارسال یک ایمیل',
