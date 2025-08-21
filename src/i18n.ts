@@ -1,5 +1,6 @@
 
 
+
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -308,6 +309,15 @@ const resources = {
       noCustomFields: 'No custom fields for this contact.',
       viewContactDetails: 'View contact details',
       deleteContact: 'Delete contact',
+      exportContacts: "Export Contacts",
+      export: "Export",
+      fileFormat: "File Format",
+      compression: "Compression",
+      fileNameOptional: "File Name (Optional)",
+      exportingContacts: "Exporting Contacts...",
+      selectedForExport: "Selected for export",
+      exportStartedSuccess: "Your contact export has started. Your download will begin shortly.",
+      exportFailedError: "Export failed: {{error}}",
       // Import Contacts Modal
       importContactsTitle: 'Import Contacts',
       uploadCsvFile: 'Upload a CSV File',
@@ -997,6 +1007,15 @@ const resources = {
       noCustomFields: 'هیچ فیلد سفارشی برای این مخاطب وجود ندارد.',
       viewContactDetails: 'مشاهده جزئیات مخاطب',
       deleteContact: 'حذف مخاطب',
+      exportContacts: "خروجی مخاطبین",
+      export: "خروجی",
+      fileFormat: "فرمت فایل",
+      compression: "فشرده‌سازی",
+      fileNameOptional: "نام فایل (اختیاری)",
+      exportingContacts: "در حال خروجی گرفتن از مخاطبین...",
+      selectedForExport: "انتخاب شده برای خروجی",
+      exportStartedSuccess: "فرآیند خروجی گرفتن از مخاطبین شما آغاز شد. دانلود به زودی شروع خواهد شد.",
+      exportFailedError: "خروجی ناموفق بود: {{error}}",
       // Campaigns
       createCampaign: 'ایجاد کمپین',
       // Send Email View

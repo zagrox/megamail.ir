@@ -14,6 +14,7 @@ import Icon, { ICONS } from '../components/Icon';
 import Badge from '../components/Badge';
 import ConfirmModal from '../components/ConfirmModal';
 import { useStatusStyles } from '../hooks/useStatusStyles';
+import ExportContactsModal from '../components/ExportContactsModal';
 
 const STATUS_ORDER = [
     'Active', 'Engaged', 'Transactional', 'Bounced', 'Unsubscribed',
@@ -44,7 +45,7 @@ const V2_ENUM_TO_STATUS: { [key: number]: string } = {
     '6': 'NotConfirmed'
 };
 
-const ContactStatusFilter = ({ apiKey, selectedStatuses, onStatusChange }: { apiKey: string, selectedStatuses: string[], onStatusChange: (status: string) => void }) => {
+const ContactStatusFilter = ({ apiKey, selectedStatuses, onStatusChange, onExportClick }: { apiKey: string, selectedStatuses: string[], onStatusChange: (status: string) => void, onExportClick: () => void }) => {
     const { t, i18n } = useTranslation();
     const [counts, setCounts] = useState<Record<string, number>>({});
     const [isLoading, setIsLoading] = useState(true);
@@ -118,6 +119,16 @@ const ContactStatusFilter = ({ apiKey, selectedStatuses, onStatusChange }: { api
                         </div>
                     );
                 })}
+            </div>
+            <div className="card-footer" style={{padding: '1rem', borderTop: '1px solid var(--border-color)', marginTop: '0.5rem'}}>
+                <button
+                    className="btn btn-secondary full-width"
+                    onClick={onExportClick}
+                    disabled={selectedStatuses.length === 0}
+                >
+                    <Icon path={ICONS.DOWNLOAD} />
+                    <span>{t('exportContacts')}</span>
+                </button>
             </div>
         </div>
     );
@@ -349,6 +360,7 @@ const ContactsView = ({ apiKey }: { apiKey: string }) => {
     const [offset, setOffset] = useState(0);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedContactDetails, setSelectedContactDetails] = useState<Contact | null>(null);
     const [isDetailLoading, setIsDetailLoading] = useState(false);
@@ -478,6 +490,19 @@ const ContactsView = ({ apiKey }: { apiKey: string }) => {
                     addToast(t('importFailedError', { error: message }), 'error');
                 }}
             />
+             <ExportContactsModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                apiKey={apiKey}
+                selectedStatuses={selectedStatuses}
+                onSuccess={() => {
+                    setIsExportModalOpen(false);
+                    addToast(t('exportStartedSuccess'), 'success');
+                }}
+                onError={(message) => {
+                    addToast(t('exportFailedError', { error: message }), 'error');
+                }}
+            />
             <Modal title={t('addNewContact')} isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)}>
                 <AddContactForm onSubmit={handleAddContact} />
             </Modal>
@@ -502,6 +527,7 @@ const ContactsView = ({ apiKey }: { apiKey: string }) => {
                     apiKey={apiKey}
                     selectedStatuses={selectedStatuses}
                     onStatusChange={handleStatusChange}
+                    onExportClick={() => setIsExportModalOpen(true)}
                 />
 
                 <div className="contacts-view-main">
