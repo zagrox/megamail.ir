@@ -1,6 +1,8 @@
 
 
 
+
+
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -254,7 +256,7 @@ const resources = {
       choosePackage: 'Choose a Package to Top Up',
       viewHistory: 'View History',
       'package': 'Package',
-      priceIRT: 'Price (IRT)',
+      priceIRT: '(IRT)',
       pricePerCreditIRT: 'Price/Credit (IRT)',
       order: 'Order',
       developerNote: 'Developer Note',
@@ -952,7 +954,7 @@ const resources = {
       choosePackage: 'یک بسته برای شارژ انتخاب کنید',
       viewHistory: 'مشاهده تاریخچه',
       'package': 'بسته',
-      priceIRT: 'قیمت (تومان)',
+      priceIRT: '(تومان)',
       pricePerCreditIRT: 'قیمت/اعتبار (تومان)',
       order: 'سفارش',
       developerNote: 'یادداشت توسعه‌دهنده',
@@ -980,6 +982,7 @@ const resources = {
       buyDifferentPackage: 'انتخاب بسته دیگر',
       confirmAndPay: 'تایید و پرداخت',
       paymentSuccess: 'پرداخت موفق',
+      totalAmount: 'مبلغ سفارش',
       // Contacts View
       searchContactsPlaceholder: 'جستجو بر اساس نام یا ایمیل...',
       importContacts: 'وارد کردن مخاطبین',

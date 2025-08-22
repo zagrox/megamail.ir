@@ -71,13 +71,23 @@ const ExportContactsModal = ({ isOpen, onClose, apiKey, selectedStatuses, onSucc
                 throw new Error(errorMessage);
             }
 
-            const downloadUrl = await response.text();
+            const responseText = await response.text();
+            try {
+                const responseData = JSON.parse(responseText);
+                const downloadUrl = responseData.Link;
 
-            // Trigger download in a new tab. This is more reliable for cross-origin downloads
-            // than creating and clicking a link programmatically.
-            window.open(downloadUrl, '_blank');
+                if (!downloadUrl) {
+                    throw new Error("API response did not contain a valid download link.");
+                }
 
-            onSuccess();
+                // Trigger download in a new tab.
+                window.open(downloadUrl, '_blank');
+                
+                onSuccess();
+            } catch (jsonError: any) {
+                console.error("Failed to parse export response:", responseText, jsonError);
+                throw new Error("Could not understand the server's response for the export request.");
+            }
         } catch (err: any) {
             onError(err.message);
         } finally {
