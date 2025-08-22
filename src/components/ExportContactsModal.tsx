@@ -73,15 +73,9 @@ const ExportContactsModal = ({ isOpen, onClose, apiKey, selectedStatuses, onSucc
 
             const downloadUrl = await response.text();
 
-            // Trigger download
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            if (fileName) {
-                link.setAttribute('download', fileName);
-            }
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Trigger download in a new tab. This is more reliable for cross-origin downloads
+            // than creating and clicking a link programmatically.
+            window.open(downloadUrl, '_blank');
 
             onSuccess();
         } catch (err: any) {

@@ -315,7 +315,7 @@ const SendEmailView = ({ apiKey, setView }: { apiKey: string, setView: (view: st
 
                 <AccordionItem 
                     id="content" 
-                    title={`2. ${t('subject')} & ${t('content')}`}
+                    title={`2. ${t('subject')} / ${t('content')}`}
                     openAccordion={openAccordion}
                     setOpenAccordion={setOpenAccordion}
                 >

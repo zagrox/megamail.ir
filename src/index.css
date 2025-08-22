@@ -1112,7 +1112,7 @@ html[data-theme='dark'] .cta-banner {
     .cta-banner-action {
         margin: 1rem auto 0;
         width: 100%;
-        max-width: 300px;
+        max-width: 100%;
     }
     .cta-banner-action .btn {
         width: 100%;
@@ -2985,7 +2985,7 @@ html[dir="rtl"] .multi-select-input {
     overflow: hidden;
 }
 .content-method-tab {
-    padding: 0.75rem 1rem;
+    padding: 0.95rem 1rem;
     background: var(--surface-color);
     border: none;
     border-right: 1px solid var(--border-color);
@@ -2994,11 +2994,10 @@ html[dir="rtl"] .multi-select-input {
     align-items: center;
     gap: 0.5rem;
     color: var(--subtle-text-color);
-    font-weight: 500;
+    font-weight: 700;
     transition: background-color 0.2s, color 0.2s;
 }
 .content-method-tabs .content-method-tab:last-child {
-    border-right: none;
 }
 .content-method-tabs .content-method-tab:hover {
     background-color: var(--subtle-background);
@@ -3014,7 +3013,7 @@ html[dir="rtl"] .multi-select-input {
     padding-top: 1.5rem;
     border-top: 1px solid var(--border-color);
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 1rem;
 }
 
