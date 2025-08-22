@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -11,6 +12,7 @@ interface CanvasProps {
     onEditImageBlock: (id: string) => void;
     selectedBlockId: string | null;
     onSelectBlock: (id: string) => void;
+    onEditBlock: (id: string) => void;
     onContentChange: (id: string, content: any) => void;
     onStyleChange: (id: string, style: any) => void;
     onInsertBlock: (blockType: string, index: number) => void;
@@ -18,7 +20,7 @@ interface CanvasProps {
     globalStyles: any;
 }
 
-const Canvas = ({ items, removeItem, onDuplicateBlock, onEditImageBlock, selectedBlockId, onSelectBlock, onContentChange, onStyleChange, onInsertBlock, onSetColumns, globalStyles }: CanvasProps) => {
+const Canvas = ({ items, removeItem, onDuplicateBlock, onEditImageBlock, selectedBlockId, onSelectBlock, onEditBlock, onContentChange, onStyleChange, onInsertBlock, onSetColumns, globalStyles }: CanvasProps) => {
     const { t } = useTranslation();
     const { setNodeRef } = useDroppable({
         id: 'canvas-droppable',
@@ -47,12 +49,13 @@ const Canvas = ({ items, removeItem, onDuplicateBlock, onEditImageBlock, selecte
                             onEditImage={onEditImageBlock}
                             isSelected={item.id === selectedBlockId}
                             onSelect={onSelectBlock}
+                            onEdit={onEditBlock}
                             onContentChange={onContentChange}
                             onStyleChange={onStyleChange}
                             onInsertBlock={(type) => onInsertBlock(type, index)}
                             onSetColumns={onSetColumns}
                             // Pass all handlers down for nested rendering
-                            allHandlers={{ removeItem, onDuplicateBlock, onEditImageBlock, onSelectBlock, onContentChange, onStyleChange, onInsertBlock, onSetColumns }}
+                            allHandlers={{ removeItem, onDuplicateBlock, onEditImageBlock, onSelectBlock, onEditBlock, onContentChange, onStyleChange, onInsertBlock, onSetColumns }}
                             selectedBlockId={selectedBlockId}
                         />
                     ))

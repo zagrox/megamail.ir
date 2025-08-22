@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -15,6 +16,7 @@ interface SortableBlockProps {
     onEditImage: (id: string) => void;
     isSelected: boolean;
     onSelect: (id: string) => void;
+    onEdit: (id: string) => void;
     onContentChange: (id: string, content: any) => void;
     onStyleChange: (id: string, style: any) => void;
     onInsertBlock: (blockType: string) => void;
@@ -24,7 +26,7 @@ interface SortableBlockProps {
 }
 
 export const SortableBlock = (props: SortableBlockProps) => {
-    const { id, item, index, onRemove, onDuplicate, onEditImage, isSelected, onSelect, onInsertBlock } = props;
+    const { id, item, onRemove, onDuplicate, isSelected, onSelect, onEdit, onInsertBlock } = props;
     const { t } = useTranslation();
     const [isAddPopoverOpen, setIsAddPopoverOpen] = useState(false);
     const {
@@ -46,6 +48,12 @@ export const SortableBlock = (props: SortableBlockProps) => {
         setIsAddPopoverOpen(false);
     };
 
+    const getBlockTypeTranslationKey = (type: string) => {
+        const key = type.toLowerCase();
+        // Check if a specific translation exists, otherwise fallback to the type itself
+        return t(key, { ns: 'translation', defaultValue: type });
+    }
+
     return (
         <div
             ref={setNodeRef}
@@ -55,40 +63,46 @@ export const SortableBlock = (props: SortableBlockProps) => {
             onClick={(e) => { e.stopPropagation(); onSelect(id);}}
         >
             {renderBlock(item, props)}
-            <div className="canvas-item-controls">
-                <button
-                    {...attributes}
-                    {...listeners}
-                    className="btn-icon canvas-item-drag-handle"
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={t('dragHandle')}
-                >
-                    <Icon path={ICONS.DRAG_HANDLE} />
-                </button>
-                {item.type === 'Image' && (
-                     <button className="btn-icon" onClick={(e) => { e.stopPropagation(); onEditImage(id); }} aria-label={t('editBlock')}>
-                        <Icon path={ICONS.PENCIL} />
-                    </button>
-                )}
-                <button className="btn-icon" onClick={(e) => { e.stopPropagation(); onDuplicate(id); }} aria-label={t('duplicateBlock')}>
-                    <Icon path={ICONS.DUPLICATE} />
-                </button>
-                <button className="btn-icon btn-icon-danger" onClick={(e) => { e.stopPropagation(); onRemove(id); }} aria-label={t('deleteBlock')}>
-                    <Icon path={ICONS.DELETE} />
-                </button>
-            </div>
-            <div className="canvas-item-add-wrapper">
-                <button
-                    className="canvas-item-add-button"
-                    onClick={(e) => { e.stopPropagation(); setIsAddPopoverOpen(p => !p); }}
-                    aria-label={t('addBlock')}
-                >
-                    <Icon path={ICONS.PLUS} />
-                </button>
-                {isAddPopoverOpen && (
-                    <AddBlockPopover onSelectBlockType={handleInsert} onClose={() => setIsAddPopoverOpen(false)} />
-                )}
-            </div>
+
+            {isSelected && (
+                <>
+                    <div
+                        className="canvas-item-actions-bar"
+                        {...attributes}
+                        {...listeners}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="canvas-item-actions-bar-left">
+                           <Icon path={ICONS.DRAG_HANDLE} />
+                           <span>{getBlockTypeTranslationKey(item.type)}</span>
+                        </div>
+                        <div className="canvas-item-actions-bar-right">
+                            <button className="btn-icon" onClick={(e) => { e.stopPropagation(); onEdit(id); }} aria-label={t('editBlock')}>
+                                <Icon path={ICONS.PENCIL} />
+                            </button>
+                            <button className="btn-icon" onClick={(e) => { e.stopPropagation(); onDuplicate(id); }} aria-label={t('duplicateBlock')}>
+                                <Icon path={ICONS.DUPLICATE} />
+                            </button>
+                            <button className="btn-icon btn-icon-danger" onClick={(e) => { e.stopPropagation(); onRemove(id); }} aria-label={t('deleteBlock')}>
+                                <Icon path={ICONS.DELETE} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="canvas-item-add-wrapper">
+                        <button
+                            className="canvas-item-add-button"
+                            onClick={(e) => { e.stopPropagation(); setIsAddPopoverOpen(p => !p); }}
+                            aria-label={t('addBlock')}
+                        >
+                            <Icon path={ICONS.PLUS} />
+                        </button>
+                        {isAddPopoverOpen && (
+                            <AddBlockPopover onSelectBlockType={handleInsert} onClose={() => setIsAddPopoverOpen(false)} />
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 };

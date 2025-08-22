@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDroppable } from '@dnd-kit/core';
@@ -258,6 +259,7 @@ const ColumnDropZone = ({ id, items, allHandlers, selectedBlockId, flex }: { id:
                             onEditImage={allHandlers.onEditImageBlock}
                             isSelected={nestedItem.id === selectedBlockId}
                             onSelect={allHandlers.onSelectBlock}
+                            onEdit={allHandlers.onEditBlock}
                             onContentChange={allHandlers.onContentChange}
                             onStyleChange={allHandlers.onStyleChange}
                             onInsertBlock={(type) => allHandlers.onInsertBlock(type, index, items)}
@@ -277,8 +279,36 @@ const ColumnDropZone = ({ id, items, allHandlers, selectedBlockId, flex }: { id:
 }
 
 const ProductBlock = (props: any) => {
-    return <ColumnsBlock {...props} />;
+    const { item, allHandlers, selectedBlockId } = props;
+    const { t } = useTranslation();
+    const s = item.style || {};
+
+    const wrapperStyle: React.CSSProperties = {
+        backgroundColor: s.backgroundColor,
+        padding: `${getPixelValue(s.paddingTop)}px ${getPixelValue(s.paddingRight)}px ${getPixelValue(s.paddingBottom)}px ${getPixelValue(s.paddingLeft)}px`,
+        gap: `${getPixelValue(s.gap)}px`,
+        alignItems: s.verticalAlign === 'middle' ? 'center' : s.verticalAlign === 'bottom' ? 'flex-end' : 'flex-start',
+    };
+    
+    // A Product block should always have columns defined upon creation.
+    // If it doesn't, render a placeholder, but not the layout selector.
+    if (!item.content?.columns || item.content.columns.length === 0) {
+        return (
+            <div className="canvas-placeholder" style={{minHeight: 100, fontSize: '0.9rem'}}>
+                <span>{`${t('productBlock')} content is missing.`}</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className="columns-block" style={wrapperStyle}>
+            {item.content.columns.map((col: any) => (
+                <ColumnDropZone key={col.id} id={col.id} items={col.items} allHandlers={allHandlers} selectedBlockId={selectedBlockId} flex={col.flex} />
+            ))}
+        </div>
+    );
 };
+
 
 const FooterBlock = ({ content, style }: { content?: any, style?: any }) => {
     const c = content || {};

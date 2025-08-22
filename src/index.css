@@ -1,3 +1,4 @@
+
 :root {
   --primary-color: #1A2B3C;
   --secondary-color: #007BFF;
@@ -3066,23 +3067,26 @@ html[dir="rtl"] .multi-select-input {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
     background-color: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
     z-index: 10;
+    gap: 1.5rem;
 }
 
 .email-builder-header-left {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 0.5rem;
 }
 
-.email-builder-main-inputs {
+.email-builder-header-right {
     display: flex;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.5rem;
 }
+
 .input-with-icon {
     position: relative;
 }
@@ -3105,28 +3109,36 @@ html[dir="rtl"] .multi-select-input {
     font-weight: 500;
 }
 
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.header-tool-actions, .header-main-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.header-main-actions .btn-primary span {
+.email-builder-header-right .btn-primary span {
     display: none;
 }
 @media (min-width: 768px) {
-    .header-main-actions .btn-primary span {
+    .email-builder-header-right .btn-primary span {
         display: inline;
     }
 }
-.header-tool-actions .btn-icon.active {
+
+.email-builder-header-left .btn-icon.active {
     color: var(--secondary-color);
     background-color: rgba(var(--info-color), 0.1);
+}
+
+@media (max-width: 768px) {
+    .email-builder-header {
+        flex-wrap: wrap;
+    }
+    .email-builder-header-left {
+        order: 1;
+        width: 100%;
+        justify-content: space-around;
+    }
+    .email-builder-header-right {
+        order: 2;
+        width: 100%;
+    }
+    .email-builder-header-right .input-with-icon {
+        flex-grow: 1;
+    }
 }
 
 .email-builder-test-panel {
@@ -3244,34 +3256,72 @@ html[dir="rtl"] .multi-select-input {
 }
 .canvas-item.selected {
     border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px var(--secondary-color);
 }
 .canvas-item.dragging {
     opacity: 0.5;
 }
+
+/* HIDE the old controls and hover add button */
 .canvas-item-controls {
+    display: none !important;
+}
+.canvas-item:hover .canvas-item-add-wrapper {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* NEW: Top Actions Bar */
+.canvas-item-actions-bar {
     position: absolute;
-    top: -2px;
-    right: -36px;
-    display: none;
-    flex-direction: column;
-    gap: 0.25rem;
-    background: var(--surface-color);
-    padding: 0.25rem;
-    border-radius: 6px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    border: 1px solid var(--border-color);
-    z-index: 5;
-}
-.canvas-item:hover .canvas-item-controls,
-.canvas-item.selected .canvas-item-controls {
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
     display: flex;
-}
-.canvas-item-drag-handle {
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--secondary-color);
+    color: white;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     cursor: grab;
+    white-space: nowrap;
 }
-.canvas-item-drag-handle:active {
+.canvas-item-actions-bar:active {
     cursor: grabbing;
 }
+
+.canvas-item-actions-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-right: 1rem;
+}
+.canvas-item-actions-bar-left span {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+.canvas-item-actions-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Style buttons inside the new bar */
+.canvas-item-actions-bar .btn-icon {
+    color: white;
+    opacity: 0.8;
+}
+.canvas-item-actions-bar .btn-icon:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    opacity: 1;
+}
+.canvas-item-actions-bar .btn-icon-danger:hover {
+    background-color: var(--danger-color);
+}
+
 .canvas-item-add-wrapper {
     position: absolute;
     bottom: -15px;
@@ -3280,9 +3330,11 @@ html[dir="rtl"] .multi-select-input {
     opacity: 0;
     transition: opacity 0.2s;
     z-index: 5;
+    pointer-events: none;
 }
-.canvas-item:hover .canvas-item-add-wrapper {
+.canvas-item.selected .canvas-item-add-wrapper {
     opacity: 1;
+    pointer-events: auto;
 }
 .canvas-item-add-button {
     width: 28px;
@@ -3751,4 +3803,98 @@ html[dir="rtl"] .multi-select-input {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Responsive Email Builder */
+@media (max-width: 992px) {
+    .email-builder-container {
+        flex-direction: column;
+        overflow: auto; /* Allow canvas and panel to scroll */
+    }
+
+    .builder-toolbar {
+        width: 100%;
+        height: auto;
+        flex-shrink: 0;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        overflow-y: hidden;
+        overflow-x: auto;
+        padding: 0.75rem;
+        /* For RTL */
+        border-left: none;
+    }
+    [dir="rtl"] .builder-toolbar {
+        border-right: none;
+        border-left: none;
+    }
+    
+    .toolbar-grid {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 0.75rem;
+        grid-template-columns: none; /* Override grid behavior */
+    }
+
+    .toolbar-item {
+        flex: 0 0 auto; /* Prevent shrinking */
+        width: 100px; /* Give a fixed width to items */
+    }
+    
+    /* Subtle scrollbar for horizontal toolbar */
+    .builder-toolbar::-webkit-scrollbar {
+        height: 4px;
+        background-color: transparent;
+    }
+    .builder-toolbar::-webkit-scrollbar-thumb {
+        background-color: var(--border-color);
+        border-radius: 4px;
+    }
+    .builder-toolbar {
+        scrollbar-width: thin;  /* Firefox */
+        scrollbar-color: var(--border-color) transparent;
+    }
+    
+    .builder-canvas-wrapper {
+        padding: 1rem;
+        flex-grow: 1; /* Allow canvas to take up available space */
+    }
+    
+    .canvas-item-actions-bar {
+        /* Ensure it fits on smaller screens */
+        padding: 0.2rem 0.4rem;
+    }
+    .canvas-item-actions-bar-left span {
+        font-size: 0.75rem;
+    }
+    
+    .settings-panel-wrapper {
+        width: 100%;
+        height: 60%; /* Take bottom half */
+        position: fixed; /* Fixed to viewport for bottom sheet behavior */
+        top: auto;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        transform: translateY(100%);
+    }
+    [dir="rtl"] .settings-panel-wrapper {
+        transform: translateY(100%);
+    }
+    
+    .settings-panel-wrapper.is-open {
+        transform: translateY(0);
+    }
+    
+    .builder-settings-panel {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+    }
+    
+    [dir="rtl"] .builder-settings-panel {
+        border-right: none;
+    }
 }

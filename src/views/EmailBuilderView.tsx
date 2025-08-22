@@ -461,20 +461,6 @@ const EmailBuilderView = ({ apiKey, user, templateToEdit }: { apiKey: string; us
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-
-    const handleExportJson = () => {
-        const data = { globalStyles, items, subject };
-        const jsonString = JSON.stringify(data, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'email-template.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
     
     const handleDragStart = useCallback((event: DragStartEvent) => {
         setSelectedBlockId(null);
@@ -671,12 +657,15 @@ const EmailBuilderView = ({ apiKey, user, templateToEdit }: { apiKey: string; us
                 
                 container.splice(index + 1, 0, duplicateItem);
                 setSelectedBlockId(duplicateItem.id);
-                setSettingsView('block');
             }
         }));
     }, []);
 
     const handleSelectBlock = useCallback((id: string) => {
+        setSelectedBlockId(id);
+    }, []);
+
+    const handleEditBlock = useCallback((id: string) => {
         setSelectedBlockId(id);
         setSettingsView('block');
     }, []);
@@ -750,7 +739,6 @@ const EmailBuilderView = ({ apiKey, user, templateToEdit }: { apiKey: string; us
             return newItems;
         });
         setSelectedBlockId(newBlock.id);
-        setSettingsView('block');
     }, []);
     
     const handleSetColumns = useCallback((blockId: string, layoutConfig: { flex: number }[]) => {
@@ -839,7 +827,6 @@ const EmailBuilderView = ({ apiKey, user, templateToEdit }: { apiKey: string; us
             draft.push(newBlock);
         }));
         setSelectedBlockId(newBlock.id);
-        setSettingsView('block');
     }, []);
     
     const handleOpenGlobalSettings = () => {
@@ -858,41 +845,32 @@ const EmailBuilderView = ({ apiKey, user, templateToEdit }: { apiKey: string; us
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="email-builder-view-container">
                 {isUpdatingImage && <div className="page-overlay"><Loader /></div>}
-                 <header className="email-builder-header">
+                <header className="email-builder-header">
                     <div className="email-builder-header-left">
-                       <div className="email-builder-main-inputs">
-                            <div className="form-group template-name-group">
-                                <div className="input-with-icon">
-                                    <Icon path={ICONS.ARCHIVE} />
-                                    <input
-                                        type="text"
-                                        placeholder={t('templateName')}
-                                        value={templateName}
-                                        onChange={(e) => setTemplateName(e.target.value)}
-                                        aria-label={t('templateName')}
-                                        required
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                        <button className="btn-icon" onClick={() => setIsTestSendVisible(prev => !prev)} title={t('sendEmail')}>
+                            <Icon path={ICONS.SEND_EMAIL} />
+                        </button>
+                        <button className="btn-icon" onClick={handleOpenGlobalSettings} title={t('global')}><Icon path={ICONS.SETTINGS} /></button>
+                        <button className={`btn-icon ${isMobileView ? 'active' : ''}`} onClick={toggleMobileView} title={t('mobileView')}><Icon path={ICONS.MOBILE} /></button>
+                        <button className="btn-icon" onClick={() => prepareAndShowHtml('preview')} title={t('previewEmail')}><Icon path={ICONS.EYE} /></button>
+                        <button className="btn-icon" onClick={() => prepareAndShowHtml('code')} title={t('viewCode')}><Icon path={ICONS.CODE} /></button>
+                        <button className="btn-icon" onClick={handleExportHtml} title={t('exportHtml')}><Icon path={ICONS.DOWNLOAD} /></button>
                     </div>
-                     <div className="header-actions">
-                        <div className="header-tool-actions">
-                            <button className="btn-icon" onClick={handleOpenGlobalSettings} title={t('global')}><Icon path={ICONS.SETTINGS} /></button>
-                            <button className={`btn-icon ${isMobileView ? 'active' : ''}`} onClick={toggleMobileView} title={t('mobileView')}><Icon path={ICONS.MOBILE} /></button>
-                            <button className="btn-icon" onClick={() => prepareAndShowHtml('preview')} title={t('previewEmail')}><Icon path={ICONS.EYE} /></button>
-                            <button className="btn-icon" onClick={() => prepareAndShowHtml('code')} title={t('viewCode')}><Icon path={ICONS.CODE} /></button>
-                            <button className="btn-icon" onClick={handleExportHtml} title={t('exportHtml')}><Icon path={ICONS.DOWNLOAD} /></button>
-                            <button className="btn-icon" onClick={handleExportJson} title={t('exportJson')}><Icon path={ICONS.FILE_TEXT} /></button>
+                    <div className="email-builder-header-right">
+                        <div className="input-with-icon">
+                            <Icon path={ICONS.ARCHIVE} />
+                            <input
+                                type="text"
+                                placeholder={t('templateName')}
+                                value={templateName}
+                                onChange={(e) => setTemplateName(e.target.value)}
+                                aria-label={t('templateName')}
+                                required
+                            />
                         </div>
-                        <div className="header-main-actions">
-                             <button className="btn-icon" onClick={() => setIsTestSendVisible(prev => !prev)} title={t('sendEmail')}>
-                                <Icon path={ICONS.SEND_EMAIL} />
-                            </button>
-                            <button className="btn btn-primary" onClick={handleSaveTemplate} disabled={isSaving} title={t('saveChanges')}>
-                                {isSaving ? <Loader /> : <><Icon path={ICONS.SAVE_CHANGES} /><span>{t('saveTemplate')}</span></>}
-                            </button>
-                        </div>
+                        <button className="btn btn-primary" onClick={handleSaveTemplate} disabled={isSaving} title={t('saveChanges')}>
+                            {isSaving ? <Loader /> : <><Icon path={ICONS.SAVE_CHANGES} /><span>{t('saveTemplate')}</span></>}
+                        </button>
                     </div>
                 </header>
 
@@ -941,6 +919,7 @@ const EmailBuilderView = ({ apiKey, user, templateToEdit }: { apiKey: string; us
                                 onEditImageBlock={handleEditImageBlock}
                                 selectedBlockId={selectedBlockId}
                                 onSelectBlock={handleSelectBlock}
+                                onEditBlock={handleEditBlock}
                                 onContentChange={handleContentChange}
                                 onStyleChange={handleStyleChange}
                                 onInsertBlock={handleInsertBlock}
