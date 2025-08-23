@@ -1,4 +1,5 @@
 
+
 :root {
   --primary-color: #1A2B3C;
   --secondary-color: #007BFF;
@@ -3052,6 +3053,7 @@ html[dir="rtl"] .multi-select-input {
     flex-direction: column;
     overflow: hidden;
     background-color: var(--background-color);
+    position: relative;
 }
 .page-overlay {
     position: fixed;
@@ -3149,7 +3151,8 @@ html[dir="rtl"] .multi-select-input {
     flex-direction: column;
     gap: 1rem;
     position: absolute;
-    top: 57px;
+    /* The header is 64px tall (40px content + 2*12px padding) + 1px border */
+    top: 65px;
     left: 0;
     right: 0;
     transform: translateY(-120%);
@@ -3165,6 +3168,13 @@ html[dir="rtl"] .multi-select-input {
 }
 .email-builder-test-panel .form-group {
     flex-grow: 1;
+}
+
+@media (max-width: 768px) {
+    .email-builder-test-panel {
+        /* Mobile header is ~129px tall */
+        top: 129px;
+    }
 }
 
 .email-builder-container {
