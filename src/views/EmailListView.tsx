@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import useApiV4 from '../hooks/useApiV4';
-import { apiFetchV4 } from '../api/elasticEmail';
+import { apiFetch, apiFetchV4 } from '../api/elasticEmail';
 import { List, Contact } from '../api/types';
 import { formatDateRelative } from '../utils/helpers';
 import CenteredMessage from '../components/CenteredMessage';
@@ -97,6 +97,8 @@ const EmailListView = ({ apiKey }: { apiKey: string }) => {
     const [listToRename, setListToRename] = useState<List | null>(null);
     const [listToView, setListToView] = useState<List | null>(null);
     const [listToDelete, setListToDelete] = useState<List | null>(null);
+    const [listCounts, setListCounts] = useState<Record<string, { count: number | null; loading: boolean; error: boolean }>>({});
+
 
     const LISTS_PER_PAGE = 25;
     const [currentPage, setCurrentPage] = useState(1);
@@ -165,6 +167,26 @@ const EmailListView = ({ apiKey }: { apiKey: string }) => {
         (currentPage - 1) * LISTS_PER_PAGE,
         currentPage * LISTS_PER_PAGE
     );
+
+    useEffect(() => {
+        if (paginatedLists && apiKey) {
+            paginatedLists.forEach((list: List) => {
+                const listName = list.ListName;
+                if (!listCounts[listName]) { // Fetch only if not already fetched/fetching
+                    setListCounts(prev => ({ ...prev, [listName]: { count: null, loading: true, error: false } }));
+    
+                    apiFetch('/contact/count', apiKey, { params: { rule: `listname = '${listName.replace(/'/g, "''")}'` } })
+                        .then(count => {
+                            setListCounts(prev => ({ ...prev, [listName]: { count: Number(count), loading: false, error: false } }));
+                        })
+                        .catch(err => {
+                            console.error(`Failed to fetch count for list ${listName}:`, err);
+                            setListCounts(prev => ({ ...prev, [listName]: { count: null, loading: false, error: true } }));
+                        });
+                }
+            });
+        }
+    }, [paginatedLists, apiKey]);
 
 
     return (
@@ -247,15 +269,22 @@ const EmailListView = ({ apiKey }: { apiKey: string }) => {
                             <thead>
                                 <tr>
                                     <th>{t('name')}</th>
+                                    <th>{t('contacts')}</th>
                                     <th>{t('dateAdded')}</th>
                                     <th style={{ textAlign: i18n.dir() === 'rtl' ? 'left' : 'right' }}>{t('action')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {paginatedLists.map((list: List) => {
+                                    const countInfo = listCounts[list.ListName];
                                     return (
                                         <tr key={list.ListName}>
                                             <td><strong>{list.ListName}</strong></td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                {countInfo?.loading || !countInfo ? <Loader /> :
+                                                 countInfo.error ? 'N/A' :
+                                                 countInfo.count !== null ? countInfo.count.toLocaleString(i18n.language) : '-'}
+                                            </td>
                                             <td>{formatDateRelative(list.DateAdded, i18n.language)}</td>
                                             <td>
                                                 <div className="action-buttons" style={{justifyContent: 'flex-end'}}>

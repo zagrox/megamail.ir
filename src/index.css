@@ -1384,6 +1384,12 @@ tbody tr:last-child td {
 tbody tr:hover {
     background-color: var(--subtle-background);
 }
+.table-container td .loader {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+    margin: 0 auto;
+}
 .table-container-simple { overflow: visible; background: transparent; border: none; border-radius: 0; }
 .table-container-simple table {
     border: 1px solid var(--border-color);
