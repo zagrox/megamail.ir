@@ -2,11 +2,17 @@ export type Contact = {
     Email: string;
     FirstName: string;
     LastName: string;
-    Status: 'Active' | 'Transactional' | 'Engaged' | 'Inactive' | 'Abuse' | 'Bounced' | 'Unsubscribed';
+    Status: 'Active' | 'Transactional' | 'Engaged' | 'Inactive' | 'Abuse' | 'Bounced' | 'Unsubscribed' | 'Stale' | 'NotConfirmed';
     Source: string;
+    SourceInfo?: string;
     DateAdded: string;
     DateUpdated?: string;
     StatusChangeDate?: string;
+    Consent?: {
+        ConsentIP?: string;
+        ConsentDate?: string;
+        ConsentTracking?: string;
+    };
     Activity?: {
         TotalSent?: number;
         TotalOpened?: number;
@@ -16,6 +22,9 @@ export type Contact = {
         LastOpened?: string;
         LastClicked?: string;
         LastFailed?: string;
+        LastIP?: string;
+        ErrorCode?: number;
+        FriendlyErrorMessage?: string;
     };
     CustomFields?: Record<string, any>;
 };

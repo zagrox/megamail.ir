@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import useApi from './useApi';
 import useApiV4 from '../hooks/useApiV4';
@@ -51,7 +51,7 @@ const ContactStatusFilter = ({ apiKey, selectedStatuses, onStatusChange, onExpor
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (!apiKey) {
             setIsLoading(false);
             return;
@@ -134,58 +134,6 @@ const ContactStatusFilter = ({ apiKey, selectedStatuses, onStatusChange, onExpor
     );
 };
 
-
-const ContactDetailModal = ({ isOpen, onClose, contactData, isLoading, error }: { isOpen: boolean; onClose: () => void; contactData: Contact | null; isLoading: boolean; error: string | null; }) => {
-    const { t, i18n } = useTranslation();
-    const { getStatusStyle } = useStatusStyles();
-    
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title={isLoading ? t('loading') : contactData?.Email || t('contactDetails')}>
-            {isLoading && <CenteredMessage><Loader /></CenteredMessage>}
-            {error && <ErrorMessage error={{ endpoint: 'GET /contacts/{email}', message: error || t('unknownError') }} />}
-            {contactData && (
-                <div className="contact-details-grid">
-                    <dt>{t('email')}</dt><dd>{contactData.Email}</dd>
-                    <dt>{t('status')}</dt><dd>{(() => {
-                        const statusStyle = getStatusStyle(contactData.Status);
-                        return <Badge text={statusStyle.text} type={statusStyle.type} iconPath={statusStyle.iconPath} />
-                    })()}</dd>
-                    <dt>{t('firstName')}</dt><dd>{contactData.FirstName || '-'}</dd>
-                    <dt>{t('lastName')}</dt><dd>{contactData.LastName || '-'}</dd>
-                    <dt>{t('source')}</dt><dd>{contactData.Source || '-'}</dd>
-                    <dt>{t('dateAdded')}</dt><dd>{formatDateForDisplay(contactData.DateAdded, i18n.language)}</dd>
-                    <dt>{t('dateUpdated')}</dt><dd>{formatDateForDisplay(contactData.DateUpdated, i18n.language)}</dd>
-                    <dt>{t('statusChangeDate')}</dt><dd>{formatDateForDisplay(contactData.StatusChangeDate, i18n.language)}</dd>
-                    
-                    <div className="grid-separator"><h4>{t('activity')}</h4></div>
-                    
-                    <dt>{t('totalSent')}</dt><dd>{contactData.Activity?.TotalSent?.toLocaleString(i18n.language) ?? '0'}</dd>
-                    <dt>{t('totalOpened')}</dt><dd>{contactData.Activity?.TotalOpened?.toLocaleString(i18n.language) ?? '0'}</dd>
-                    <dt>{t('totalClicked')}</dt><dd>{contactData.Activity?.TotalClicked?.toLocaleString(i18n.language) ?? '0'}</dd>
-                    <dt>{t('totalFailed')}</dt><dd>{contactData.Activity?.TotalFailed?.toLocaleString(i18n.language) ?? '0'}</dd>
-                    <dt>{t('lastSent')}</dt><dd>{formatDateForDisplay(contactData.Activity?.LastSent, i18n.language)}</dd>
-                    <dt>{t('lastOpened')}</dt><dd>{formatDateForDisplay(contactData.Activity?.LastOpened, i18n.language)}</dd>
-                    <dt>{t('lastClicked')}</dt><dd>{formatDateForDisplay(contactData.Activity?.LastClicked, i18n.language)}</dd>
-                    <dt>{t('lastFailed')}</dt><dd>{formatDateForDisplay(contactData.Activity?.LastFailed, i18n.language)}</dd>
-
-                    <div className="grid-separator"><h4>{t('customFields')}</h4></div>
-                    
-                    {contactData.CustomFields && Object.keys(contactData.CustomFields).length > 0 ? (
-                         Object.entries(contactData.CustomFields).map(([key, value]) => (
-                             <React.Fragment key={key}>
-                                 <dt>{key}</dt>
-                                 <dd>{String(value) || '-'}</dd>
-                             </React.Fragment>
-                         ))
-                    ) : (
-                        <dd className="full-width-dd">{t('noCustomFields')}</dd>
-                    )}
-                </div>
-            )}
-        </Modal>
-    );
-};
-
 const ImportContactsModal = ({ isOpen, onClose, apiKey, onSuccess, onError }: { isOpen: boolean; onClose: () => void; apiKey: string; onSuccess: () => void; onError: (msg: string) => void; }) => {
     const { t } = useTranslation();
     const [file, setFile] = useState<File | null>(null);
@@ -237,7 +185,7 @@ const ImportContactsModal = ({ isOpen, onClose, apiKey, onSuccess, onError }: { 
         }
     };
     
-    useEffect(() => {
+    React.useEffect(() => {
         if (!isOpen) {
             setFile(null);
             setListName('');
@@ -296,7 +244,7 @@ const ContactCard = React.memo(({ contact, onView, onDelete }: { contact: Contac
 
     return (
         <div className="card contact-card">
-            <div className="contact-card-main">
+            <div className="contact-card-main" onClick={() => onView(contact.Email)}>
                 <div className="contact-card-info">
                     <h4 className="contact-card-name">{contact.FirstName || contact.LastName ? `${contact.FirstName || ''} ${contact.LastName || ''}`.trim() : contact.Email}</h4>
                     <p className="contact-card-email">{contact.Email}</p>
@@ -308,9 +256,6 @@ const ContactCard = React.memo(({ contact, onView, onDelete }: { contact: Contac
             <div className="contact-card-footer">
                 <small>{t('dateAdded')}: {formatDateForDisplay(contact.DateAdded, i18n.language)}</small>
                 <div className="action-buttons">
-                    <button className="btn-icon btn-icon-primary" onClick={() => onView(contact.Email)} aria-label={t('viewContactDetails')}>
-                        <Icon path={ICONS.EYE} />
-                    </button>
                     <button className="btn-icon btn-icon-danger" onClick={() => onDelete(contact.Email)} aria-label={t('deleteContact')}>
                         <Icon path={ICONS.DELETE} />
                     </button>
@@ -352,7 +297,7 @@ const AddContactForm = ({ onSubmit }: { onSubmit: (data: {Email: string, FirstNa
     );
 };
 
-const ContactsView = ({ apiKey }: { apiKey: string }) => {
+const ContactsView = ({ apiKey, setView }: { apiKey: string, setView: (view: string, data?: any) => void; }) => {
     const { t } = useTranslation();
     const { addToast } = useToast();
     const [refetchIndex, setRefetchIndex] = useState(0);
@@ -361,10 +306,6 @@ const ContactsView = ({ apiKey }: { apiKey: string }) => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-    const [selectedContactDetails, setSelectedContactDetails] = useState<Contact | null>(null);
-    const [isDetailLoading, setIsDetailLoading] = useState(false);
-    const [detailError, setDetailError] = useState<string | null>(null);
     const [contactToDelete, setContactToDelete] = useState<string | null>(null);
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
@@ -459,21 +400,10 @@ const ContactsView = ({ apiKey }: { apiKey: string }) => {
             setContactToDelete(null);
         }
     };
-
-    const handleViewContact = useCallback(async (email: string) => {
-        setIsDetailModalOpen(true);
-        setIsDetailLoading(true);
-        setDetailError(null);
-        setSelectedContactDetails(null);
-        try {
-            const details = await apiFetchV4(`/contacts/${encodeURIComponent(email)}`, apiKey);
-            setSelectedContactDetails(details);
-        } catch (err: any) {
-            setDetailError(err.message || t('contactDetailsError'));
-        } finally {
-            setIsDetailLoading(false);
-        }
-    }, [apiKey, t]);
+    
+    const handleViewContact = (email: string) => {
+        setView('ContactDetail', { contactEmail: email, origin: { view: 'Contacts', data: {} } });
+    };
 
     return (
         <div>
@@ -514,14 +444,7 @@ const ContactsView = ({ apiKey }: { apiKey: string }) => {
             >
                 <p>{t('confirmDeleteContact', { email: contactToDelete })}</p>
             </ConfirmModal>
-            <ContactDetailModal
-                isOpen={isDetailModalOpen}
-                onClose={() => { setIsDetailModalOpen(false); setSelectedContactDetails(null); }}
-                contactData={selectedContactDetails}
-                isLoading={isDetailLoading}
-                error={detailError}
-            />
-
+            
             <div className="contacts-view-layout">
                 <ContactStatusFilter
                     apiKey={apiKey}

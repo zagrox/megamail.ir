@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useApiV4 from '../hooks/useApiV4';
-import { Contact } from '../api/types';
+import { Contact, List } from '../api/types';
 import CenteredMessage from '../components/CenteredMessage';
 import Loader from '../components/Loader';
 import ErrorMessage from '../components/ErrorMessage';
@@ -9,10 +9,11 @@ import Icon, { ICONS } from '../components/Icon';
 import Badge from '../components/Badge';
 import { useStatusStyles } from '../hooks/useStatusStyles';
 
-const ListDetailView = ({ apiKey, listName, onBack }: {
+const ListDetailView = ({ apiKey, list, onBack, setView }: {
     apiKey: string;
-    listName: string;
+    list: List | null;
     onBack: () => void;
+    setView: (view: string, data?: any) => void;
 }) => {
     const { t, i18n } = useTranslation();
     const { getStatusStyle } = useStatusStyles();
@@ -21,6 +22,7 @@ const ListDetailView = ({ apiKey, listName, onBack }: {
     const [refetchIndex, setRefetchIndex] = useState(0);
 
     const CONTACTS_PER_PAGE = 20;
+    const listName = list?.ListName || '';
 
     const { data: allContacts, loading, error } = useApiV4(
         listName ? `/lists/${encodeURIComponent(listName)}/contacts` : '',
@@ -45,7 +47,7 @@ const ListDetailView = ({ apiKey, listName, onBack }: {
         return filteredContacts.slice(offset, offset + CONTACTS_PER_PAGE);
     }, [filteredContacts, offset]);
 
-    if (!listName) {
+    if (!list) {
         return (
             <CenteredMessage>
                 <div className="info-message warning">
@@ -109,7 +111,14 @@ const ListDetailView = ({ apiKey, listName, onBack }: {
                                     const statusStyle = getStatusStyle(contact.Status);
                                     return (
                                         <tr key={contact.Email}>
-                                            <td><strong>{contact.Email}</strong></td>
+                                            <td>
+                                                <button 
+                                                    className="table-link-button" 
+                                                    onClick={() => setView('ContactDetail', { contactEmail: contact.Email, origin: { view: 'ListDetail', data: { list } } })}
+                                                >
+                                                    <strong>{contact.Email}</strong>
+                                                </button>
+                                            </td>
                                             <td>{`${contact.FirstName || ''} ${contact.LastName || ''}`.trim() || '-'}</td>
                                             <td><Badge text={statusStyle.text} type={statusStyle.type} iconPath={statusStyle.iconPath} /></td>
                                             <td>
