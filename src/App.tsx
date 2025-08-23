@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useEffect, ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
@@ -228,16 +230,21 @@ const App = () => {
     };
 
     const navItems = [
+        // Group 1: Overview & Core Actions
         { name: t('dashboard'), view: 'Dashboard', icon: ICONS.DASHBOARD },
         { name: t('statistics'), view: 'Statistics', icon: ICONS.STATISTICS },
+        { name: t('campaigns'), view: 'Campaigns', icon: ICONS.CAMPAIGNS },
+        { name: t('sendEmail'), view: 'Send Email', icon: ICONS.SEND_EMAIL },
+        { type: 'divider' },
+        // Group 2: Audience Management
         { name: t('contacts'), view: 'Contacts', icon: ICONS.CONTACTS },
         { name: t('emailLists'), view: 'Email Lists', icon: ICONS.EMAIL_LISTS },
         { name: t('segments'), view: 'Segments', icon: ICONS.SEGMENTS },
-        { name: t('mediaManager'), view: 'Media Manager', icon: ICONS.FOLDER },
-        { name: t('campaigns'), view: 'Campaigns', icon: ICONS.CAMPAIGNS },
+        { type: 'divider' },
+        // Group 3: Content & Assets
         { name: t('templates'), view: 'Templates', icon: ICONS.ARCHIVE },
-        { name: t('sendEmail'), view: 'Send Email', icon: ICONS.SEND_EMAIL },
         { name: t('emailBuilder'), view: 'Email Builder', icon: ICONS.PENCIL },
+        { name: t('mediaManager'), view: 'Media Manager', icon: ICONS.FOLDER },
     ];
     
     const SidebarContent = () => (
@@ -247,12 +254,18 @@ const App = () => {
             <span className="logo-font">Mailzila</span>
         </div>
         <nav className="nav">
-            {navItems.map(item => (
-                <button key={item.view} onClick={() => handleSetView(item.view)} className={`nav-btn ${view === item.view ? 'active' : ''}`}>
-                    <Icon path={item.icon} />
-                    <span>{item.name}</span>
-                </button>
-            ))}
+            {navItems.map((item, index) => {
+                if ('type' in item && item.type === 'divider') {
+                    return <hr key={`divider-${index}`} className="nav-divider" />;
+                }
+                const navItem = item as { name: string; view: string; icon: string; };
+                return (
+                    <button key={navItem.view} onClick={() => handleSetView(navItem.view)} className={`nav-btn ${view === navItem.view ? 'active' : ''}`}>
+                        <Icon path={navItem.icon} />
+                        <span>{navItem.name}</span>
+                    </button>
+                )
+            })}
         </nav>
         <div className="sidebar-footer-nav">
              <button onClick={() => handleSetView('Buy Credits')} className={`nav-btn ${view === 'Buy Credits' ? 'active' : ''}`}>

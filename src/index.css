@@ -259,6 +259,11 @@ a:hover {
     background-color: var(--secondary-color);
     color: white;
 }
+.nav-divider {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 0.5rem 0;
+}
 .sidebar-footer-nav {
     display: flex;
     flex-direction: column;
