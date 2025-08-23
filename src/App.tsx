@@ -28,7 +28,8 @@ import Icon from './components/Icon';
 import EmbedView from './views/EmbedView';
 import ResetPasswordView from './views/ResetPasswordView';
 import CallbackView from './views/CallbackView';
-import { Template } from './api/types';
+import { List, Template } from './api/types';
+import ListDetailView from './views/ListDetailView';
 
 
 const App = () => {
@@ -36,6 +37,7 @@ const App = () => {
     const { t, i18n } = useTranslation();
     const [view, setView] = useState('Dashboard');
     const [templateToEdit, setTemplateToEdit] = useState<Template | null>(null);
+    const [selectedList, setSelectedList] = useState<List | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const appContainerRef = useRef<HTMLDivElement>(null);
 
@@ -176,12 +178,19 @@ const App = () => {
         setView('Dashboard');
     };
 
-    const handleSetView = (newView: string, data?: { template?: Template }) => {
+    const handleSetView = (newView: string, data?: { template?: Template; list?: List }) => {
         if (newView === 'Email Builder' && data?.template) {
             setTemplateToEdit(data.template);
         } else {
             setTemplateToEdit(null);
         }
+
+        if (newView === 'ListDetail' && data?.list) {
+            setSelectedList(data.list);
+        } else {
+            setSelectedList(null);
+        }
+
         setView(newView);
         setIsMobileMenuOpen(false);
     }
@@ -192,7 +201,8 @@ const App = () => {
         'Account': { component: <AccountView apiKey={apiKey} user={user} />, title: t('account'), icon: ICONS.ACCOUNT },
         'Buy Credits': { component: <BuyCreditsView apiKey={apiKey} user={user} setView={handleSetView} />, title: t('buyCredits'), icon: ICONS.BUY_CREDITS },
         'Contacts': { component: <ContactsView apiKey={apiKey} />, title: t('contacts'), icon: ICONS.CONTACTS },
-        'Email Lists': { component: <EmailListView apiKey={apiKey} />, title: t('emailLists'), icon: ICONS.EMAIL_LISTS },
+        'Email Lists': { component: <EmailListView apiKey={apiKey} setView={handleSetView} />, title: t('emailLists'), icon: ICONS.EMAIL_LISTS },
+        'ListDetail': { component: <ListDetailView apiKey={apiKey} listName={selectedList?.ListName || ''} onBack={() => handleSetView('Email Lists')} />, title: selectedList ? t('contactsInList', { listName: selectedList.ListName }) : t('contacts'), icon: ICONS.CONTACTS },
         'Segments': { component: <SegmentsView apiKey={apiKey} />, title: t('segments'), icon: ICONS.SEGMENTS },
         'Media Manager': { component: <MediaManagerView apiKey={apiKey} />, title: t('mediaManager'), icon: ICONS.FOLDER },
         'Campaigns': { component: <CampaignsView apiKey={apiKey} setView={handleSetView} />, title: t('campaigns'), icon: ICONS.CAMPAIGNS },
@@ -244,7 +254,7 @@ const App = () => {
     );
     
     const currentView = views[view];
-    const showHeader = view !== 'Dashboard' && view !== 'Email Builder' && view !== 'Account' && view !== 'Send Email';
+    const showHeader = view !== 'Dashboard' && view !== 'Email Builder' && view !== 'Account' && view !== 'Send Email' && view !== 'ListDetail';
 
     return (
         <div ref={appContainerRef} className={`app-container ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>

@@ -1388,7 +1388,6 @@ tbody tr:hover {
     width: 20px;
     height: 20px;
     border-width: 2px;
-    margin: 0 auto;
 }
 .table-container-simple { overflow: visible; background: transparent; border: none; border-radius: 0; }
 .table-container-simple table {
@@ -1403,6 +1402,21 @@ tbody tr:hover {
 }
 .simple-table tr:last-child td {
     border-bottom: none;
+}
+
+.table-link-button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-align: inherit;
+    text-decoration: none;
+}
+.table-link-button:hover {
+    color: var(--secondary-color);
+    text-decoration: underline;
 }
 
 /* --- VIEW HEADERS --- */
