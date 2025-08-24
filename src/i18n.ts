@@ -708,6 +708,11 @@ const resources = {
       yourBalanceLabel: 'Your Balance',
       unlockForCredits: 'Unlock for {{amount}} credits',
       notEnoughCredits: 'You need {{amount}} more credits.',
+      unlockModuleSuccess: 'Module "{{moduleName}}" unlocked successfully!',
+      unlockModuleError: 'Failed to unlock module.',
+      showActiveOnly: 'Show Active Only',
+      cardView: 'Card View',
+      tableView: 'Table View',
     }
   },
   fa: {
@@ -764,9 +769,9 @@ const resources = {
       emailsSent: 'ایمیل‌های ارسال شده',
       theme: 'پوسته',
       close: 'بستن',
-      modules: 'ماژول‌ها',
-      unlock: 'باز کردن قفل',
-      unlocked: 'قفل باز شد',
+      modules: 'ابزارها',
+      unlock: 'فعالسازی ابزار',
+      unlocked: 'فعال شده',
       // Auth
       signIn: 'ورود',
       signUp: 'ثبت نام',
@@ -1133,6 +1138,11 @@ const resources = {
       yourBalanceLabel: 'اعتبار شما',
       unlockForCredits: 'فعالسازی با کسر {{amount}} اعتبار',
       notEnoughCredits: 'شما به {{amount}} اعتبار بیشتر نیاز دارید.',
+      unlockModuleSuccess: 'ماژول "{{moduleName}}" با موفقیت باز شد!',
+      unlockModuleError: 'باز کردن قفل ماژول ناموفق بود.',
+      showActiveOnly: 'نمایش فعال‌ها',
+      cardView: 'نمای کارتی',
+      tableView: 'نمای جدولی',
     }
   }
 };

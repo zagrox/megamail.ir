@@ -31,10 +31,10 @@ const UnlockModuleModal: React.FC<UnlockModuleModalProps> = ({ module, onClose, 
         setIsPurchasing(true);
         try {
             await purchaseModule(module.id);
-            addToast(`Module "${module.modulename}" unlocked successfully!`, 'success');
+            addToast(t('unlockModuleSuccess', { moduleName: module.modulename }), 'success');
             onClose();
         } catch (err: any) {
-            addToast(err.message || 'Failed to unlock module.', 'error');
+            addToast(err.message || t('unlockModuleError'), 'error');
         } finally {
             setIsPurchasing(false);
         }

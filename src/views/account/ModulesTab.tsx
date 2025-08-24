@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import useModules from '../../hooks/useModules';
 import { useAuth } from '../../contexts/AuthContext';
@@ -74,7 +75,6 @@ const ModuleCard = ({ module, isUnlocked, onUnlock, onInstantUnlock, isUnlocking
     );
 };
 
-
 const ModulesTab: React.FC<ModulesTabProps> = ({ setView }) => {
     const { t } = useTranslation();
     const { modules, loading: modulesLoading, error: modulesError } = useModules();
@@ -82,18 +82,28 @@ const ModulesTab: React.FC<ModulesTabProps> = ({ setView }) => {
     const { addToast } = useToast();
     const [moduleToUnlock, setModuleToUnlock] = useState<Module | null>(null);
     const [unlockingModuleId, setUnlockingModuleId] = useState<string | null>(null);
+    const [showOnlyActive, setShowOnlyActive] = useState(false);
+    const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
     const handleInstantUnlock = async (module: Module) => {
         setUnlockingModuleId(module.id);
         try {
             await purchaseModule(module.id);
-            addToast(`Module "${module.modulename}" unlocked successfully!`, 'success');
+            addToast(t('unlockModuleSuccess', { moduleName: module.modulename }), 'success');
         } catch (err: any) {
-            addToast(err.message || 'Failed to unlock module.', 'error');
+            addToast(err.message || t('unlockModuleError'), 'error');
         } finally {
             setUnlockingModuleId(null);
         }
     };
+
+    const filteredModules = useMemo(() => {
+        if (!modules) return [];
+        if (showOnlyActive) {
+            return modules.filter(module => hasModuleAccess(module.modulename));
+        }
+        return modules;
+    }, [modules, showOnlyActive, hasModuleAccess]);
 
     if (modulesLoading) {
         return <CenteredMessage><Loader /></CenteredMessage>;
@@ -102,6 +112,63 @@ const ModulesTab: React.FC<ModulesTabProps> = ({ setView }) => {
     if (modulesError) {
         return <ErrorMessage error={{ endpoint: 'GET /items/modules', message: modulesError }} />;
     }
+    
+    const renderTable = () => (
+        <div className="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>{t('name')}</th>
+                        <th>{t('description')}</th>
+                        <th>{t('price')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('status')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filteredModules?.map(module => (
+                        <tr key={module.id}>
+                            <td><strong>{module.modulename}</strong></td>
+                            <td>{module.moduledetails}</td>
+                            <td>
+                                {module.moduleprice > 0 
+                                    ? `${module.moduleprice.toLocaleString()} ${t('credits')}` 
+                                    : 'Free'
+                                }
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                                {hasModuleAccess(module.modulename) ? (
+                                    <Badge text={t('unlocked')} type="success" iconPath={ICONS.LOCK_OPEN} />
+                                ) : (
+                                    <button 
+                                        className="btn" 
+                                        onClick={() => module.moduleprice === 0 ? handleInstantUnlock(module) : setModuleToUnlock(module)}
+                                        disabled={unlockingModuleId === module.id}
+                                    >
+                                        {unlockingModuleId === module.id ? <Loader /> : t('unlock')}
+                                    </button>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+
+    const renderCards = () => (
+        <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+            {filteredModules?.map(module => (
+                <ModuleCard
+                    key={module.id}
+                    module={module}
+                    isUnlocked={hasModuleAccess(module.modulename)}
+                    onUnlock={() => setModuleToUnlock(module)}
+                    onInstantUnlock={() => handleInstantUnlock(module)}
+                    isUnlocking={unlockingModuleId === module.id}
+                />
+            ))}
+        </div>
+    );
 
     return (
         <div className="account-tab-content">
@@ -113,18 +180,29 @@ const ModulesTab: React.FC<ModulesTabProps> = ({ setView }) => {
                 />
             )}
 
-            <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-                {modules?.map(module => (
-                    <ModuleCard
-                        key={module.id}
-                        module={module}
-                        isUnlocked={hasModuleAccess(module.modulename)}
-                        onUnlock={() => setModuleToUnlock(module)}
-                        onInstantUnlock={() => handleInstantUnlock(module)}
-                        isUnlocking={unlockingModuleId === module.id}
-                    />
-                ))}
+            <div className="view-header" style={{marginBottom: '2rem'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: 0 }}>
+                        <label className="toggle-switch">
+                            <input type="checkbox" checked={showOnlyActive} onChange={e => setShowOnlyActive(e.target.checked)} />
+                            <span className="toggle-slider"></span>
+                        </label>
+                         <label style={{ marginBottom: 0, fontWeight: 500 }}>{t('showActiveOnly')}</label>
+                    </div>
+                </div>
+                <div className="header-actions">
+                     <div className="view-switcher">
+                        <button onClick={() => setViewMode('card')} className={`view-mode-btn ${viewMode === 'card' ? 'active' : ''}`} aria-label={t('cardView')}>
+                            <Icon path={ICONS.DASHBOARD} />
+                        </button>
+                        <button onClick={() => setViewMode('table')} className={`view-mode-btn ${viewMode === 'table' ? 'active' : ''}`} aria-label={t('tableView')}>
+                            <Icon path={ICONS.EMAIL_LISTS} />
+                        </button>
+                    </div>
+                </div>
             </div>
+
+            {viewMode === 'card' ? renderCards() : renderTable()}
         </div>
     );
 };
