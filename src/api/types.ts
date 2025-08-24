@@ -51,3 +51,12 @@ export type Template = {
     Subject?: string;
     Body: { Content: string }[];
 };
+export type Module = {
+    id: string;
+    modulename: string;
+    moduleprice: number;
+    moduledetails: string;
+    status: string;
+    modulepro?: boolean;
+    modulediscount?: number;
+};

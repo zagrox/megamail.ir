@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 
 const Icon = ({ path, className = '', style, title }: { path: string; className?: string; style?: React.CSSProperties; title?: string }) => (
@@ -66,6 +64,7 @@ export const ICONS = {
     CODE: "M16 18l6-6-6-6M8 6l-6 6 6 6",
     LOCK: "M7 11v-4a5 5 0 0110 0v4M5 11h14a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2z",
     LOCK_OPEN: "M17 9V7a5 5 0 00-5-5S7 2 7 7v2M5 9h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V11a2 2 0 012-2z",
+    GIFT: "M20 12v10H4V12M2 7h20v5H2V7zm10 15V7m-4 0h8",
     // Email Builder Icons
     HEADING: "M6 4v16M18 4v16M8 4h10M8 12h10",
     TYPE: "M4 7V4h16v3M9 20h6M12 4v16",

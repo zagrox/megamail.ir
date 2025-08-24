@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,8 +15,9 @@ import ShareTab from './account/ShareTab';
 import DomainsView from './DomainsView';
 import SmtpView from './SmtpView';
 import OrdersTab from './account/OrdersTab';
+import ModulesTab from './account/ModulesTab';
 
-const AccountView = ({ apiKey, user }: { apiKey: string, user: any }) => {
+const AccountView = ({ apiKey, user, setView }: { apiKey: string, user: any, setView: (view: string, data?: any) => void }) => {
     const { t } = useTranslation();
     const { data: accountData, loading: accountLoading, error: accountError } = useApi('/account/load', apiKey, {}, apiKey ? 1 : 0);
     const { data: contactsCountData, loading: contactsCountLoading } = useApi('/contact/count', apiKey, { allContacts: true }, apiKey ? 1 : 0);
@@ -41,11 +41,12 @@ const AccountView = ({ apiKey, user }: { apiKey: string, user: any }) => {
     const tabs = [
         { id: 'general', label: t('general'), icon: ICONS.DASHBOARD, component: <GeneralTab accountData={accountData} contactsCountData={contactsCountData} contactsCountLoading={contactsCountLoading} installPrompt={installPrompt} handleInstallClick={handleInstallClick} /> },
         { id: 'profile', label: t('profile'), icon: ICONS.ACCOUNT, component: <ProfileTab accountData={accountData} user={user} /> },
+        { id: 'modules', label: t('modules'), icon: ICONS.STAR, component: <ModulesTab setView={setView} /> },
         { id: 'orders', label: t('orders'), icon: ICONS.BUY_CREDITS, component: <OrdersTab /> },
-        { id: 'domains', label: t('domains'), icon: ICONS.LANGUAGE, component: <DomainsView apiKey={apiKey} /> },
+        { id: 'domains', label: t('domains'), icon: ICONS.DOMAINS, component: <DomainsView apiKey={apiKey} /> },
         { id: 'smtp', label: t('smtp'), icon: ICONS.SMTP, component: <SmtpView apiKey={apiKey} user={user} /> },
         { id: 'api_key', label: t('apiKey'), icon: ICONS.KEY, component: <ApiKeyTab apiKey={apiKey} /> },
-        { id: 'security', label: t('security'), icon: ICONS.DOMAINS, component: <SecurityTab user={user} /> },
+        { id: 'security', label: t('security'), icon: ICONS.LOCK, component: <SecurityTab user={user} /> },
         { id: 'share', label: t('share'), icon: ICONS.SHARE, component: <ShareTab apiKey={apiKey} /> },
     ];
     

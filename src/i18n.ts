@@ -1,8 +1,5 @@
 
 
-
-
-
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -63,6 +60,9 @@ const resources = {
       failed: 'Failed',
       theme: 'Theme',
       close: 'Close',
+      modules: 'Modules',
+      unlock: 'Unlock',
+      unlocked: 'Unlocked',
       // Auth
       signIn: 'Sign In',
       signUp: 'Sign Up',
@@ -704,6 +704,10 @@ const resources = {
       sortNameZA: "Name (Z-A)",
       sortSizeLargest: "Size (Largest)",
       sortSizeSmallest: "Size (Smallest)",
+      unlockModalPriceLabel: 'Price',
+      yourBalanceLabel: 'Your Balance',
+      unlockForCredits: 'Unlock for {{amount}} credits',
+      notEnoughCredits: 'You need {{amount}} more credits.',
     }
   },
   fa: {
@@ -760,6 +764,9 @@ const resources = {
       emailsSent: 'ایمیل‌های ارسال شده',
       theme: 'پوسته',
       close: 'بستن',
+      modules: 'ماژول‌ها',
+      unlock: 'باز کردن قفل',
+      unlocked: 'قفل باز شد',
       // Auth
       signIn: 'ورود',
       signUp: 'ثبت نام',
@@ -1122,6 +1129,10 @@ const resources = {
       // Campaign View
       viewCampaignStats: 'مشاهده آمار',
       failed: 'ناموفق',
+      unlockModalPriceLabel: 'اعتبار لازم',
+      yourBalanceLabel: 'اعتبار شما',
+      unlockForCredits: 'فعالسازی با کسر {{amount}} اعتبار',
+      notEnoughCredits: 'شما به {{amount}} اعتبار بیشتر نیاز دارید.',
     }
   }
 };

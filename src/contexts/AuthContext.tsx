@@ -4,10 +4,33 @@ import React, { useState, useEffect, useCallback, ReactNode, createContext, useC
 import { readMe, registerUser, updateMe, updateUser as sdkUpdateUser, createItem, readItems, updateItem } from '@directus/sdk';
 import sdk from '../api/directus';
 import { apiFetch } from '../api/elasticEmail';
-import { DIRECTUS_URL } from '../api/config';
+
+interface User {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    email: string;
+    avatar?: string;
+    language?: string;
+    status: string;
+    role: any;
+    last_access?: string;
+    email_notifications: boolean;
+    theme_dark: boolean;
+    theme_light: boolean;
+    text_direction: string;
+    company?: string;
+    website?: string;
+    mobile?: string;
+    elastickey?: string;
+    elasticid?: string;
+    isApiKeyUser?: boolean;
+    profileId?: string;
+    purchasedModules: string[];
+}
 
 interface AuthContextType {
-    user: any | null;
+    user: User | null;
     isAuthenticated: boolean;
     loading: boolean;
     login: (credentials: any) => Promise<void>;
@@ -19,141 +42,167 @@ interface AuthContextType {
     requestPasswordReset: (email: string) => Promise<void>;
     resetPassword: (token: string, password: string) => Promise<void>;
     createElasticSubaccount: (email: string, password: string) => Promise<any>;
+    hasModuleAccess: (moduleName: string) => boolean;
+    purchaseModule: (moduleId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<any | null>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // This function ONLY handles fetching and setting a Directus user.
     const getMe = useCallback(async () => {
-        setLoading(true);
         try {
-            const me = await sdk.request(readMe({ fields: [
-                'id', 
-                'first_name', 
-                'last_name', 
-                'email', 
-                'avatar',
-                'language',
-                'status',
-                'role.*',
-                'last_access',
-                'email_notifications',
-                'theme_dark',
-                'theme_light',
-                'text_direction'
-            ] }));
+            // 1. Get Directus user data
+            const me = await sdk.request(readMe({
+                fields: [
+                    'id', 'first_name', 'last_name', 'email', 'avatar', 'language',
+                    'status', 'role.*', 'last_access', 'email_notifications',
+                    'theme_dark', 'theme_light', 'text_direction'
+                ]
+            }));
+
+            // 2. Get the associated user profile from the 'profiles' collection
+            const profiles = await sdk.request(readItems('profiles', {
+                filter: { user_created: { _eq: me.id } },
+                fields: ['id', 'company', 'website', 'mobile', 'elastickey', 'elasticid'],
+                limit: 1
+            }));
             
-            let profileData;
-            try {
-                const profiles = await sdk.request(readItems('profiles', {
-                    filter: { user_created: { _eq: me.id } },
-                    fields: [
-                        'id',
-                        'company',
-                        'website',
-                        'mobile',
-                        'elastickey',
-                        'elasticid'
-                    ],
-                    limit: 1
+            let profileData = profiles?.[0];
+
+            if (!profileData) {
+                profileData = await sdk.request(createItem('profiles', { status: 'published', user_created: me.id }));
+            }
+
+            // 3. Fetch purchased modules directly from the `profiles_modules` junction collection
+            let purchasedModuleIds = new Set<string>();
+            if (profileData.id) {
+                 const purchasedModulesResponse = await sdk.request(readItems('profiles_modules', {
+                    filter: { profile_id: { _eq: profileData.id } },
+                    fields: ['module_id'],
+                    limit: -1
                 }));
-
-                if (profiles && profiles.length > 0) {
-                    profileData = profiles[0];
-                } else {
-                    // Create a new profile. Directus will automatically link it to the
-                    // current user via the `user_created` system field.
-                    // A default status is often required by Directus schemas.
-                    profileData = await sdk.request(createItem('profiles', { status: 'published' }));
-                }
-
-                // Merge profile data with the main user record. Spreading `me` last ensures
-                // that it is the source of truth for any overlapping fields like `first_name`,
-                // `last_name`, and `email`, overwriting any default values from the profile.
-                const mergedUser = {
-                    ...profileData,
-                    ...me,
-                };
-                
-                // The user's ID is me.id. We need the profile's ID for updates,
-                // so we store it separately.
-                mergedUser.profileId = profileData.id;
-
-                setUser(mergedUser);
-
-            } catch (profileError: any) {
-                let errorMessage = "An unknown error occurred while fetching/creating the user profile.";
-                if (profileError && profileError.errors && Array.isArray(profileError.errors) && profileError.errors[0]?.message) {
-                    errorMessage = profileError.errors[0].message;
-                } else if (profileError && profileError.message) {
-                    errorMessage = profileError.message;
-                }
-                console.error("Failed to fetch or create user profile. Logging in with base user data. Error:", errorMessage, profileError);
-                setUser(me);
+                purchasedModuleIds = new Set(purchasedModulesResponse.map((pm: any) => String(pm.module_id)));
             }
 
-        } catch (directusError) {
-            try {
-                const apiKey = localStorage.getItem('elastic_email_api_key');
-                if (apiKey) {
-                    const accountData = await apiFetch('/account/load', apiKey);
-                    setUser({
-                        elastickey: apiKey,
-                        first_name: accountData.firstname,
-                        email: accountData.email,
-                        isApiKeyUser: true,
-                    });
-                } else {
-                    setUser(null);
-                }
-            } catch (apiKeyError) {
-                console.error("Fallback API key authentication failed:", apiKeyError);
-                setUser(null);
-            }
-        } finally {
-            setLoading(false);
+            // 4. Get all available modules to map IDs to names
+            const allModules = await sdk.request(readItems('modules', { fields: ['id', 'modulename'], limit: -1 }));
+
+            // 5. Map purchased module IDs to module names
+            const purchasedModules = allModules
+                .filter((module: any) => purchasedModuleIds.has(String(module.id)))
+                .map((module: any) => module.modulename);
+
+            // 6. Combine data and set the user state
+            const mergedUser: User = {
+                ...me,
+                ...profileData,
+                // Explicitly define required fields from `me` and resolve `id` conflict
+                // to satisfy TypeScript when the SDK returns `any` types.
+                id: me.id,
+                email: me.email,
+                status: me.status,
+                role: me.role,
+                email_notifications: me.email_notifications,
+                theme_dark: me.theme_dark,
+                theme_light: me.theme_light,
+                text_direction: me.text_direction,
+                profileId: profileData.id as string,
+                purchasedModules,
+                isApiKeyUser: false,
+            };
+            
+            setUser(mergedUser);
+
+        } catch (error) {
+            console.error("Directus session refresh failed:", error);
+            await sdk.logout();
+            setUser(null);
         }
     }, []);
 
+    // This function ONLY handles fetching and setting an API Key user.
+    const getApiKeyUser = useCallback(async (apiKey: string) => {
+         try {
+            const accountData = await apiFetch('/account/load', apiKey);
+            setUser({
+                id: accountData.publicaccountid || `api-user-${apiKey.slice(0, 5)}`,
+                email: accountData.email,
+                elastickey: apiKey,
+                isApiKeyUser: true,
+                purchasedModules: [], // API key users have no Directus-managed modules
+                first_name: accountData.firstname,
+                last_name: accountData.lastname,
+                status: 'Active',
+                role: { name: 'API User' },
+                last_access: new Date().toISOString(),
+                email_notifications: false,
+                theme_dark: false,
+                theme_light: true,
+                text_direction: 'ltr',
+            });
+        } catch (error) {
+            console.error("API Key validation failed:", error);
+            localStorage.removeItem('elastic_email_api_key');
+            setUser(null);
+        }
+    }, []);
 
+    // On initial app load, determine auth state
     useEffect(() => {
-        getMe();
-    }, [getMe]);
+        const initializeAuth = async () => {
+            setLoading(true);
+            const directusToken = await sdk.getToken();
+            const apiKey = localStorage.getItem('elastic_email_api_key');
 
+            if (directusToken) {
+                await getMe();
+            } else if (apiKey) {
+                await getApiKeyUser(apiKey);
+            } else {
+                setUser(null);
+            }
+            setLoading(false);
+        };
+        initializeAuth();
+    }, [getMe, getApiKeyUser]);
+    
     const login = async (credentials: any) => {
+        setLoading(true);
         await sdk.login(credentials.email, credentials.password);
+        localStorage.removeItem('elastic_email_api_key');
         await getMe();
+        setLoading(false);
     };
     
     const loginWithApiKey = async (apiKey: string) => {
-        await apiFetch('/account/load', apiKey);
+        setLoading(true);
+        await sdk.logout();
         localStorage.setItem('elastic_email_api_key', apiKey);
-        await getMe();
+        await getApiKeyUser(apiKey);
+        setLoading(false);
     };
 
     const register = async (details: any) => {
-        const { email, password, confirm_password, ...otherDetails } = details;
+        const { email, password, ...otherDetails } = details;
         return await sdk.request(registerUser(email, password, otherDetails));
     };
 
-    const logoutAsync = async () => {
-        if (!user?.isApiKeyUser) {
-            try {
-                await sdk.logout();
-            } catch (error) {
-                console.warn("Directus SDK logout failed, proceeding with client-side logout:", error);
-            }
+    const logout = async () => {
+        setLoading(true);
+        try {
+            await sdk.logout();
+        } catch (error) {
+            console.warn("Directus SDK logout failed, proceeding with client-side cleanup:", error);
+        } finally {
+            localStorage.removeItem('elastic_email_api_key');
+            setUser(null);
+            setLoading(false);
         }
-        localStorage.removeItem('elastic_email_api_key');
-        setUser(null);
     };
-
-    const logout = () => {
-        logoutAsync().catch(e => console.error("Logout process failed", e));
-    }
     
     const updateUser = async (data: any) => {
         if (!user || !user.id || user.isApiKeyUser) throw new Error("User not authenticated or is an API key user.");
@@ -165,11 +214,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const profilePayload: any = {};
 
         Object.keys(data).forEach(key => {
-            if (userFields.includes(key)) {
-                userPayload[key] = data[key];
-            } else if (profileFields.includes(key)) {
-                profilePayload[key] = data[key];
-            }
+            if (userFields.includes(key)) userPayload[key] = data[key];
+            else if (profileFields.includes(key)) profilePayload[key] = data[key];
         });
         
         const promises = [];
@@ -181,99 +227,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         await Promise.all(promises);
-        
-        setUser(currentUser => ({ ...currentUser, ...data }));
+        await getMe(); // Refetch all user data to ensure consistency
     }
 
     const changePassword = async (passwords: { old: string; new: string }) => {
-        if (!user?.id) {
-            throw new Error('User not authenticated or ID is missing.');
-        }
-
-        const payload = {
-            password: passwords.new,
-        };
-
-        await sdk.request(sdkUpdateUser(user.id, payload));
+        if (!user?.id) throw new Error('User not authenticated or ID is missing.');
+        await sdk.request(sdkUpdateUser(user.id, { password: passwords.new }));
     };
 
     const requestPasswordReset = async (email: string) => {
-        // Construct the reset URL dynamically based on the current application's origin.
-        // This makes the password reset flow work across different environments (dev, staging, prod)
-        // without hardcoding URLs. The '/reset-password' path is handled by the App's router.
-        const reset_url = `${window.location.origin}/reset-password`;
-        const payload = {
-            email,
-            reset_url,
-        };
+        const reset_url = `${window.location.origin}/#/reset-password`;
         await sdk.request(() => ({
-            method: 'POST',
-            path: '/auth/password/request',
-            body: JSON.stringify(payload),
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            method: 'POST', path: '/auth/password/request',
+            body: JSON.stringify({ email, reset_url }),
+            headers: { 'Content-Type': 'application/json' },
         }));
     };
 
     const resetPassword = async (token: string, password: string) => {
-        const payload = {
-            token,
-            password,
-        };
         await sdk.request(() => ({
-            method: 'POST',
-            path: '/auth/password/reset',
-            body: JSON.stringify(payload),
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            method: 'POST', path: '/auth/password/reset',
+            body: JSON.stringify({ token, password }),
+            headers: { 'Content-Type': 'application/json' },
         }));
     };
     
     const createElasticSubaccount = async (email: string, password: string) => {
         const FLOW_ID = 'ba831cd4-2b5d-494a-aacb-17c934d969a1';
-        const currentUser = user;
-        if (!currentUser || !currentUser.id) {
-            throw new Error("Current user not found, cannot start account creation flow.");
-        }
+        if (!user || !user.id) throw new Error("Current user not found.");
     
-        // Trigger the flow
         await sdk.request(() => ({
-            method: 'POST',
-            path: `/flows/trigger/${FLOW_ID}`,
+            method: 'POST', path: `/flows/trigger/${FLOW_ID}`,
             body: JSON.stringify({ email, password }),
             headers: { 'Content-Type': 'application/json' },
         }));
     
-        // Wait for a moment to allow the async flow to complete and write data.
         await new Promise(resolve => setTimeout(resolve, 3000));
+        await getMe(); // Re-fetch user data to get new API key
+    };
+
+    const hasModuleAccess = (moduleName: string): boolean => {
+        const coreModules = ['Dashboard', 'Account', 'Buy Credits'];
+        if (coreModules.includes(moduleName)) return true;
+        if (user?.isApiKeyUser) return false; // API key users don't have module access
+        return user?.purchasedModules.includes(moduleName) ?? false;
+    };
     
-        // Refetch the user's profile to verify the outcome of the flow.
-        const profiles = await sdk.request(readItems('profiles', {
-            filter: { user_created: { _eq: currentUser.id } },
-            limit: 1
-        }));
-    
-        if (!profiles || profiles.length === 0) {
-            throw new Error("User profile not found after account creation flow.");
+    const purchaseModule = async (moduleId: string) => {
+        const PURCHASE_FLOW_TRIGGER_ID = '3bdc2659-67e7-4fa2-9717-89365b801bef';
+        
+        try {
+            await sdk.request(() => ({
+                method: 'POST', path: `/flows/trigger/${PURCHASE_FLOW_TRIGGER_ID}`,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ module_id: moduleId }),
+            }));
+
+            await new Promise(resolve => setTimeout(resolve, 4000));
+            await getMe(); // Refresh user data to reflect new module
+        } catch (error: any) {
+            console.error('Module purchase failed:', error);
+            const errorMessage = error?.errors?.[0]?.message || error.message || 'An unknown error occurred during purchase.';
+            throw new Error(errorMessage);
         }
-    
-        const newProfile = profiles[0];
-        const newApiKey = newProfile.elastickey;
-    
-        // Check if the key is a valid string. The failing flow writes an object.
-        if (typeof newApiKey !== 'string' || newApiKey.length < 20) { // API keys are usually long.
-            if (typeof newApiKey === 'object' && newApiKey !== null && (newApiKey as any).error) {
-                // Provide a specific error message if the flow returned one.
-                throw new Error(`Account setup failed on the server: ${(newApiKey as any).error}`);
-            }
-            // Provide a generic but helpful error message.
-            throw new Error("Failed to create and retrieve a valid API key from the server. Please contact support.");
-        }
-    
-        // If the key is valid, refresh the user state for the whole app.
-        await getMe();
     };
 
     const value = {
@@ -289,6 +305,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         requestPasswordReset,
         resetPassword,
         createElasticSubaccount,
+        hasModuleAccess,
+        purchaseModule,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

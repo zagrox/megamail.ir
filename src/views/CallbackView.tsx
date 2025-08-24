@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { readItems, updateItem } from '@directus/sdk';
@@ -76,8 +78,8 @@ const CallbackView = () => {
                     const packsize = packages[0].packsize;
 
                     // Add credits to user's account via Elastic Email API
-                    if (user && user.panelkey) {
-                        await apiFetch('/account/addsubaccountcredits', user.panelkey, {
+                    if (user && user.elastickey) {
+                        await apiFetch('/account/addsubaccountcredits', user.elastickey, {
                             method: 'POST',
                             params: {
                                 credits: packsize,

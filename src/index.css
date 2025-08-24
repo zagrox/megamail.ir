@@ -250,6 +250,7 @@ a:hover {
     cursor: pointer;
     text-align: left;
     transition: background-color 0.2s, color 0.2s;
+    position: relative;
 }
 .nav-btn:hover {
     background-color: var(--subtle-background);
@@ -275,6 +276,54 @@ a:hover {
 .logout-btn:hover {
     background-color: rgba(var(--danger-color), 0.1);
     color: var(--danger-color);
+}
+
+.nav-btn.locked {
+    color: var(--subtle-text-color);
+    cursor: pointer;
+    opacity: 0.7;
+}
+.nav-btn.locked .icon {
+    opacity: 0.5;
+}
+.nav-btn.locked:hover {
+    background-color: var(--subtle-background);
+    opacity: 1;
+}
+.nav-btn.locked .lock-icon {
+    position: absolute;
+    right: 0.75rem;
+    color: var(--warning-color);
+    width: 1rem;
+    height: 1rem;
+}
+[dir="rtl"] .nav-btn.locked .lock-icon {
+    right: auto;
+    left: 0.75rem;
+}
+
+.nav-card.locked {
+    opacity: 0.6;
+    background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 10px,
+        rgba(var(--border-color-rgb), 0.3) 10px,
+        rgba(var(--border-color-rgb), 0.3) 20px
+    );
+}
+.nav-card.locked .nav-card-icon {
+    filter: grayscale(80%);
+}
+.nav-card .lock-icon-overlay {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    color: var(--warning-color);
+}
+[dir="rtl"] .nav-card .lock-icon-overlay {
+    right: auto;
+    left: 1rem;
 }
 
 /* --- MOBILE & RESPONSIVE --- */

@@ -1,7 +1,9 @@
+
+
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
-import useApi from './useApi';
+import useApi from '../views/useApi';
 import useApiV4 from '../hooks/useApiV4';
 import { getPastDateByDays, formatDateForApiV4 } from '../utils/helpers';
 import CenteredMessage from '../components/CenteredMessage';
@@ -14,12 +16,12 @@ import UnlockModuleModal from '../components/UnlockModuleModal';
 
 const DashboardView = ({ setView, apiKey, user, isEmbed = false }: { setView: (view: string, data?: any) => void, apiKey: string, user: any, isEmbed?: boolean }) => {
     const { t, i18n } = useTranslation();
-    const { hasModuleAccess, loading: authLoading } = useAuth();
+    const { hasModuleAccess } = useAuth();
     const apiParams = useMemo(() => ({ from: formatDateForApiV4(getPastDateByDays(365)) }), []);
     const { data: statsData, loading: statsLoading, error: statsError } = useApiV4(`/statistics`, apiKey, apiParams);
     const { data: accountData, loading: accountLoading } = useApi('/account/load', apiKey, {}, apiKey ? 1 : 0);
     const { data: contactsCountData, loading: contactsCountLoading } = useApi('/contact/count', apiKey, { allContacts: true }, apiKey ? 1 : 0);
-    const { modules, loading: modulesLoading } = useModules();
+    const { modules } = useModules();
     const [moduleToUnlock, setModuleToUnlock] = useState<Module | null>(null);
 
     const navItems = useMemo(() => [
@@ -102,17 +104,13 @@ const DashboardView = ({ setView, apiKey, user, isEmbed = false }: { setView: (v
                         <div className="dashboard-nav-grid">
                             {navItems.map(item => {
                                 const hasAccess = hasModuleAccess(item.view);
-                                const isCoreModule = ['Dashboard', 'Account', 'Buy Credits'].includes(item.view);
-                                
-                                const moduleData = modules?.find(m => m.modulename === item.view);
-                                const isPurchasableModule = !!moduleData;
-                                const isLocked = !isCoreModule && !hasAccess && (authLoading || modulesLoading || isPurchasableModule);
-                                const isPromotional = isLocked && moduleData?.modulepro === true;
+                                const isLocked = !hasAccess && modules?.some(m => m.modulename === item.view);
 
                                 const handleClick = () => {
                                     if (isLocked) {
+                                        const moduleData = modules?.find(m => m.modulename === item.view);
                                         if (moduleData) setModuleToUnlock(moduleData);
-                                    } else {
+                                    } else if (hasAccess) {
                                         setView(item.view);
                                     }
                                 };
@@ -123,11 +121,7 @@ const DashboardView = ({ setView, apiKey, user, isEmbed = false }: { setView: (v
                                         className={`card nav-card clickable ${isLocked ? 'locked' : ''}`}
                                         onClick={handleClick}
                                     >
-                                        {isLocked && (
-                                            <div className="lock-icon-overlay" style={isPromotional ? { color: 'var(--success-color)' } : {}}>
-                                                <Icon path={isPromotional ? ICONS.GIFT : ICONS.LOCK} />
-                                            </div>
-                                        )}
+                                        {isLocked && <div className="lock-icon-overlay"><Icon path={ICONS.LOCK} /></div>}
                                         <Icon path={item.icon} className="nav-card-icon" />
                                         <div className="nav-card-text-content">
                                             <div className="nav-card-title">{item.name}</div>

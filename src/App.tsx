@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React, { useState, useEffect, ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
@@ -30,13 +24,15 @@ import Icon from './components/Icon';
 import EmbedView from './views/EmbedView';
 import ResetPasswordView from './views/ResetPasswordView';
 import CallbackView from './views/CallbackView';
-import { List, Template } from './api/types';
+import { List, Template, Module } from './api/types';
 import ListDetailView from './views/ListDetailView';
 import ContactDetailView from './views/ContactDetailView';
+import useModules from './hooks/useModules';
+import UnlockModuleModal from './components/UnlockModuleModal';
 
 
 const App = () => {
-    const { isAuthenticated, loading, user, logout } = useAuth();
+    const { isAuthenticated, user, logout, hasModuleAccess, loading: authLoading } = useAuth();
     const { t, i18n } = useTranslation();
     const [view, setView] = useState('Dashboard');
     const [templateToEdit, setTemplateToEdit] = useState<Template | null>(null);
@@ -45,12 +41,11 @@ const App = () => {
     const [contactDetailOrigin, setContactDetailOrigin] = useState<{ view: string, data: any } | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const appContainerRef = useRef<HTMLDivElement>(null);
+    const { modules, loading: modulesLoading } = useModules();
+    const [moduleToUnlock, setModuleToUnlock] = useState<Module | null>(null);
 
-    // When a user logs in, their profile might have a language preference.
-    // This effect syncs the app's language with this preference for a consistent experience.
     useEffect(() => {
         if (user?.language) {
-            // Directus stores locales like 'en-US' or 'fa-IR'. i18next uses short codes like 'en', 'fa'.
             const langCode = user.language.split('-')[0];
             if (langCode !== i18n.language) {
                 i18n.changeLanguage(langCode);
@@ -61,8 +56,7 @@ const App = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const isEmbedMode = urlParams.get('embed') === 'true';
     
-    // Check both hash and pathname for routing to handle different redirect behaviors
-    const hash = window.location.hash.substring(1); // remove '#'
+    const hash = window.location.hash.substring(1);
     const [hashPath] = hash.split('?');
     const pathname = window.location.pathname;
     const isResetPasswordMode = hashPath.startsWith('/reset-password') || pathname.startsWith('/reset-password');
@@ -90,91 +84,31 @@ const App = () => {
         };
 
         const handleTouchMove = (e: TouchEvent) => {
-            if (isMobileMenuOpen || touchStartX === null || touchStartY === null) {
-                return;
-            }
-
+            if (isMobileMenuOpen || touchStartX === null || touchStartY === null) return;
             const currentX = e.touches[0].clientX;
-            const currentY = e.touches[0].clientY;
             const deltaX = currentX - touchStartX;
-            const deltaY = currentY - touchStartY;
-
-            // Make sure it's a horizontal swipe, not a scroll
-            if (Math.abs(deltaX) < Math.abs(deltaY) * 1.5) {
-                return;
-            }
+            if (Math.abs(deltaX) < 50) return; // Swipe threshold
             
             const isRTL = i18n.dir() === 'rtl';
-            const screenWidth = window.innerWidth;
-            const edgeThreshold = 50; // Swipes must start within 50px of an edge
-            const swipeThreshold = 50; // Must swipe at least 50px
-
-            let shouldOpen = false;
-
-            if (isRTL) {
-                const isAtRightEdge = touchStartX > screenWidth - edgeThreshold;
-                const isSwipingLeft = deltaX < -swipeThreshold;
-                if (isAtRightEdge && isSwipingLeft) {
-                    shouldOpen = true;
-                }
-            } else {
-                const isAtLeftEdge = touchStartX < edgeThreshold;
-                const isSwipingRight = deltaX > swipeThreshold;
-                if (isAtLeftEdge && isSwipingRight) {
-                    shouldOpen = true;
-                }
-            }
-
-            if (shouldOpen) {
+            if ((!isRTL && deltaX > 0) || (isRTL && deltaX < 0)) {
                 setIsMobileMenuOpen(true);
-                touchStartX = null;
-                touchStartY = null;
             }
         };
-
-        const handleTouchEnd = () => {
-            touchStartX = null;
-            touchStartY = null;
-        };
-
-        container.addEventListener('touchstart', handleTouchStart, { passive: true });
-        container.addEventListener('touchmove', handleTouchMove, { passive: true });
-        container.addEventListener('touchend', handleTouchEnd);
-        container.addEventListener('touchcancel', handleTouchEnd);
+        container.addEventListener('touchstart', handleTouchStart);
+        container.addEventListener('touchmove', handleTouchMove);
 
         return () => {
             container.removeEventListener('touchstart', handleTouchStart);
             container.removeEventListener('touchmove', handleTouchMove);
-            container.removeEventListener('touchend', handleTouchEnd);
-            container.removeEventListener('touchcancel', handleTouchEnd);
         };
     }, [isMobileMenuOpen, i18n, isEmbedMode, setIsMobileMenuOpen]);
 
-    if (isResetPasswordMode) {
-        return <ResetPasswordView />;
-    }
-
-    if (isCallbackMode) {
-        return <CallbackView />;
-    }
-
-    if (isEmbedMode) {
-        return <EmbedView />;
-    }
-
-    if (loading) {
-        return <CenteredMessage style={{height: '100vh'}}><Loader /></CenteredMessage>;
-    }
-
-    if (!isAuthenticated) {
-        return <AuthView />;
-    }
-
-    // If the user is authenticated but has not completed onboarding (i.e., no elastickey),
-    // show the onboarding flow.
-    if (!user?.elastickey) {
-        return <OnboardingFlowView onComplete={() => { /* Auth context handles user refresh */ }} />;
-    }
+    if (isResetPasswordMode) return <ResetPasswordView />;
+    if (isCallbackMode) return <CallbackView />;
+    if (isEmbedMode) return <EmbedView />;
+    if (authLoading && !user) return <CenteredMessage style={{height: '100vh'}}><Loader /></CenteredMessage>;
+    if (!isAuthenticated) return <AuthView />;
+    if (!user?.elastickey) return <OnboardingFlowView onComplete={() => {}} />;
     
     const apiKey = user?.elastickey;
 
@@ -184,26 +118,18 @@ const App = () => {
     };
 
     const handleSetView = (newView: string, data?: { template?: Template; list?: List; contactEmail?: string; origin?: { view: string, data: any } }) => {
-        if (newView === 'Email Builder' && data?.template) {
-            setTemplateToEdit(data.template);
-        } else {
-            setTemplateToEdit(null);
-        }
+        if (newView === 'Email Builder' && data?.template) setTemplateToEdit(data.template);
+        else setTemplateToEdit(null);
 
-        if (newView === 'ListDetail' && data?.list) {
-            setSelectedList(data.list);
-        } else if (newView !== 'ContactDetail') {
-            setSelectedList(null);
-        }
+        if (newView === 'ListDetail' && data?.list) setSelectedList(data.list);
+        else if (newView !== 'ContactDetail') setSelectedList(null);
         
         if (newView === 'ContactDetail' && data?.contactEmail) {
             setSelectedContactEmail(data.contactEmail);
             setContactDetailOrigin(data.origin || { view: 'Contacts', data: {} });
         } else {
             setSelectedContactEmail(null);
-            if (!data?.origin) {
-                 setContactDetailOrigin(null);
-            }
+            if (!data?.origin) setContactDetailOrigin(null);
         }
 
         setView(newView);
@@ -213,7 +139,7 @@ const App = () => {
     const views: Record<string, { component: ReactNode, title: string, icon: string }> = {
         'Dashboard': { component: <DashboardView setView={handleSetView} apiKey={apiKey} user={user} />, title: t('dashboard'), icon: ICONS.DASHBOARD },
         'Statistics': { component: <StatisticsView apiKey={apiKey} />, title: t('statistics'), icon: ICONS.STATISTICS },
-        'Account': { component: <AccountView apiKey={apiKey} user={user} />, title: t('account'), icon: ICONS.ACCOUNT },
+        'Account': { component: <AccountView apiKey={apiKey} user={user} setView={handleSetView} />, title: t('account'), icon: ICONS.ACCOUNT },
         'Buy Credits': { component: <BuyCreditsView apiKey={apiKey} user={user} setView={handleSetView} />, title: t('buyCredits'), icon: ICONS.BUY_CREDITS },
         'Contacts': { component: <ContactsView apiKey={apiKey} setView={handleSetView} />, title: t('contacts'), icon: ICONS.CONTACTS },
         'Email Lists': { component: <EmailListView apiKey={apiKey} setView={handleSetView} />, title: t('emailLists'), icon: ICONS.EMAIL_LISTS },
@@ -230,21 +156,20 @@ const App = () => {
     };
 
     const navItems = [
-        // Group 1: Overview & Core Actions
         { name: t('dashboard'), view: 'Dashboard', icon: ICONS.DASHBOARD },
         { name: t('statistics'), view: 'Statistics', icon: ICONS.STATISTICS },
         { name: t('campaigns'), view: 'Campaigns', icon: ICONS.CAMPAIGNS },
         { name: t('sendEmail'), view: 'Send Email', icon: ICONS.SEND_EMAIL },
         { type: 'divider' },
-        // Group 2: Audience Management
         { name: t('contacts'), view: 'Contacts', icon: ICONS.CONTACTS },
         { name: t('emailLists'), view: 'Email Lists', icon: ICONS.EMAIL_LISTS },
         { name: t('segments'), view: 'Segments', icon: ICONS.SEGMENTS },
         { type: 'divider' },
-        // Group 3: Content & Assets
         { name: t('templates'), view: 'Templates', icon: ICONS.ARCHIVE },
         { name: t('emailBuilder'), view: 'Email Builder', icon: ICONS.PENCIL },
         { name: t('mediaManager'), view: 'Media Manager', icon: ICONS.FOLDER },
+        { name: t('domains'), view: 'Domains', icon: ICONS.DOMAINS },
+        { name: t('smtp'), view: 'SMTP', icon: ICONS.SMTP },
     ];
     
     const SidebarContent = () => (
@@ -259,10 +184,33 @@ const App = () => {
                     return <hr key={`divider-${index}`} className="nav-divider" />;
                 }
                 const navItem = item as { name: string; view: string; icon: string; };
+                const hasAccess = hasModuleAccess(navItem.view);
+                const isCoreModule = ['Dashboard', 'Account', 'Buy Credits'].includes(navItem.view);
+
+                const moduleData = modules?.find(m => m.modulename === navItem.view);
+                const isPurchasableModule = !!moduleData;
+                const isLocked = !isCoreModule && !hasAccess && (authLoading || modulesLoading || isPurchasableModule);
+                const isPromotional = isLocked && moduleData?.modulepro === true;
+
+                const handleClick = () => {
+                    if (isLocked) {
+                        if (moduleData) setModuleToUnlock(moduleData);
+                    } else {
+                        handleSetView(navItem.view);
+                    }
+                };
+
                 return (
-                    <button key={navItem.view} onClick={() => handleSetView(navItem.view)} className={`nav-btn ${view === navItem.view ? 'active' : ''}`}>
+                    <button key={navItem.view} onClick={handleClick} className={`nav-btn ${view === navItem.view ? 'active' : ''} ${isLocked ? 'locked' : ''}`}>
                         <Icon path={navItem.icon} />
                         <span>{navItem.name}</span>
+                        {isLocked && (
+                            <Icon
+                                path={isPromotional ? ICONS.GIFT : ICONS.LOCK}
+                                className="lock-icon"
+                                style={isPromotional ? { color: 'var(--success-color)' } : {}}
+                            />
+                        )}
                     </button>
                 )
             })}
@@ -285,6 +233,13 @@ const App = () => {
 
     return (
         <div ref={appContainerRef} className={`app-container ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
+            {moduleToUnlock && (
+                <UnlockModuleModal
+                    module={moduleToUnlock}
+                    onClose={() => setModuleToUnlock(null)}
+                    setView={setView}
+                />
+            )}
             <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
             <aside className="sidebar">
                 <SidebarContent />
